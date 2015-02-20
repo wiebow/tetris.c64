@@ -1,0 +1,7 @@
+bin/test_blocks_BuildLog.txt
+*.dmp
+bin/tetris1_BuildLog.txt
+*.sym
+*.vs
+bin/blocks_BuildLog.txt
+bin/input_BuildLog.txt
