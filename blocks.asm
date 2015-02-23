@@ -1,9 +1,7 @@
 
 // Tetris for 6502. (c) WdW 2015
 
-
 // code concerning blocks
-
 
 			.const screenMemory = $fb		// zero page pointer to a screen memory position
 
@@ -237,46 +235,46 @@ frameArrayHi:
 // block0, 4 frames
 
 frame00:
-			.text " AA "
-			.text "  A "
-			.text "  A "
+			.text " HH "
+			.text "  H "
+			.text "  H "
 			.text "    "
 frame01:
-			.text "   A"
-			.text " AAA"
+			.text "   H"
+			.text " HHH"
 			.text "    "
 			.text "    "
 frame02:
-			.text "  A "
-			.text "  A "
-			.text "  AA"
+			.text "  H "
+			.text "  H "
+			.text "  HH"
 			.text "    "
 frame03:
 			.text "    "
-			.text " AAA"
-			.text " A  "
+			.text " HHH"
+			.text " H  "
 			.text "    "
 
 // block1, 4 frames
 
 frame04:
-			.text "  @ "
-			.text " @@ "
-			.text "  @ "
+			.text "  I "
+			.text " II "
+			.text "  I "
 			.text "    "
 frame05:
-			.text "  @ "
-			.text " @@@"
+			.text "  I "
+			.text " III"
 			.text "    "
 			.text "    "
 frame06:
-			.text "  @ "
-			.text "  @@"
-			.text "  @ "
+			.text "  I "
+			.text "  II"
+			.text "  I "
 			.text "    "
 frame07:
 			.text "    "
-			.text " @@@"
-			.text "  @ "
+			.text " III"
+			.text "  I "
 			.text "    "
 

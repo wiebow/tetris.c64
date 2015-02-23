@@ -5,3 +5,4 @@ bin/tetris1_BuildLog.txt
 *.vs
 bin/blocks_BuildLog.txt
 bin/input_BuildLog.txt
+*.prg
