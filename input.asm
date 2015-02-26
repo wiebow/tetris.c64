@@ -17,6 +17,8 @@
 // the input has a delay of 10 updates.
 // only one key at a time is registered
 
+// collision detection etc is also included when movement is selected.
+
 GetKeyInput:
 			dec delayCounter 		// count down
 			beq continue 			// do nothing until the counter rolls over
@@ -40,14 +42,24 @@ continue:
  			bne !nextkey+ 			// no, check for next
 			jsr EraseBlock 			// remove block on this position
 			dec blockXposition 		// alter block position
-			jsr PrintBlock 			// draw the new block frame
+
+			jsr CheckBlockSpace 	// will it fit?
+			beq !skip+ 				// yes. print it
+			inc blockXposition 		// no. move it back
+!skip:
+			jsr PrintBlock
  			rts 					// done!
 !nextkey:
- 			cmp #RIGHT
- 			bne !nextkey+
+ 			cmp #RIGHT 				// right key held?
+ 			bne !nextkey+ 			// no. check for next
  			jsr EraseBlock 			// remove block on this position
  			inc blockXposition
- 			jsr PrintBlock 			// draw the new block frame
+
+ 			jsr CheckBlockSpace 	// will it fit?
+ 			beq !skip+ 				// A register is 0, so yes
+ 			dec blockXposition 		// don't move!
+!skip:
+ 			jsr PrintBlock 
  			rts						// done!
 !nextkey:
  			cmp #TURNCOUNTER 		// turn counter clockwise?
@@ -55,6 +67,12 @@ continue:
  			jsr EraseBlock 			// remove block on this position
  			lda #$01 				// yes. 1 means counter
  			jsr AnimateBlock 		// and go
+
+ 			jsr CheckBlockSpace
+ 			beq !skip+
+ 			lda #$00
+ 			jsr AnimateBlock
+!skip:
  			jsr PrintBlock 			// draw the new block frame
  			rts 					// done!
 !nextkey:
@@ -63,12 +81,28 @@ continue:
 			jsr EraseBlock 			// get rid of block on this position
 			lda #$00 				// yes
 			jsr AnimateBlock 		// do it
+
+			jsr CheckBlockSpace 	// will it fit?
+			beq !skip+ 				// yes. so print it
+			lda #$01 				// no, rotate back
+			jsr AnimateBlock 		// ..
+!skip:
 			jsr PrintBlock 			// print the block with new frame
 			rts 					// done!
 !nextkey:
 			cmp #DOWN 				// down one row?
 			bne !nextkey+ 			// no
+			jsr EraseBlock
 			inc blockYposition 		// yes. change block position
+
+			jsr CheckBlockSpace
+			beq !skip+
+			dec blockYposition		// cnnnot move down, so move back
+			jsr PrintBlock			// so print
+//			jsr NewBlock 			// and get a new block!
+									// this will also check for lines
+!skip:
+			jsr PrintBlock
 			rts 					// done!
 !nextkey:
 			cmp #RESET 				// reset game?

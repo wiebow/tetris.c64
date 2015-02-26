@@ -51,7 +51,7 @@ xdone:
 
 
 // prints a block on the screen
-// x and y position but be set becaus of SetScreenPosition
+// x and y position but be set for the use of SetScreenPosition ...
 // and SelectBlock must have been called before calling this subroutine
 
 PrintBlock:
@@ -71,6 +71,7 @@ PrintBlock:
 			ldx #$00 				// reset the block data counter
 			ldy #$00 				// reset the print counter
 printLoop:
+
 			lda $1010,x 		   	// get block data. the adress is modified at the start of this subroutine
 			cmp #$20 				// is it a space?
 		    beq !skip+ 				// then skip printing it
@@ -89,6 +90,57 @@ printLoop:
 
 			ldy #$00 				// reset the counter for a new row
 			jmp printLoop 			// do the next row
+
+
+
+
+// Checks if there is space for a block to be printed.
+// Set the position registers before calling this routine.
+// A register is set according to outcome: 0 = no problem, 1 = no space
+
+CheckBlockSpace:
+			jsr SetScreenPosition 	// ensure that we check the right spot
+
+			// first, get pointer to the start of block data
+
+			ldx currentFrame
+			lda frameArrayLo,x 		// get the lo byte
+			sta spaceLoop+1			// store in lda instruction
+			lda frameArrayHi,x 		// same for hi byte
+			sta spaceLoop+2 		// and store
+
+			// check the space
+
+			ldx #$00 				// reset the block data counter
+			ldy #$00 				// reset the print counter
+spaceLoop:
+			lda $1010,x 		   	// get block data.
+			cmp #$20 				// is it a space?
+		    beq !skip+ 				// then skip the check it
+
+		    // check the position where data must be printed
+
+			lda (screenMemory),y    // load the data on this position
+			cmp #$20 				// is it a space?
+			beq !skip+ 				// yes. no problem. continue check
+
+			lda #$01 				// no space for block. set flag
+			rts 					// done!
+!skip:
+			inx 					// inc the block data pointer
+			cpx #16 				// done 16 characters? (4x4)
+			bne !skip+ 				// continue printing if not
+			lda #$00 				// all locations checked. done. clear flag
+			rts 					// done!
+!skip:
+			iny						
+			cpy #$04 				
+			bne spaceLoop
+			jsr DownOneRow 
+			ldy #$00 				
+			jmp spaceLoop 			
+
+
 
 
 // erases a block on the screen
@@ -163,7 +215,7 @@ SelectBlock:
 			rts
 
 
-// this subroutine will advance the block animation forward or backwards
+// this subroutine will advance the block animation forward or backwards...
 // depending on the value of the A register. Set that before calling this subroutine.
 // 0 = forward, clockwise
 // 1 = backward, counter clockwise
@@ -193,6 +245,7 @@ doBackward:
 			sta currentFrame 		// the last frame.
 			rts 					// done!
 
+
 // ---------------------------------------------------------------------------------------------
 
 // some registers to store information in
@@ -209,6 +262,15 @@ firstFrame:
 			.byte 0					// first animation frame for current block
 lastFrame: 				
 			.byte 0					// last animation frame for current block
+
+
+collisionBlockXposition:
+			.byte 0 				// x position of collision ghost block
+collisionBlockYposition:
+			.byte 0 				// y position of collision ghost block
+
+
+
 
 
 // ---------------------------------------------------------------------------------------------

@@ -74,7 +74,7 @@ clearScreen:
 // calling this.
 printScreen:
 			.const screenWidth = 21
-			.const screenHeight = 20
+			.const screenHeight = 21
 
 			// first, set pointer to the start of data
 			stx readdata+1			// store in lda instruction
@@ -139,7 +139,7 @@ playscreen:
 			// skip the 1st 24 bytes as they are metadata.
 
 			.pc = $3800
-			.import binary "tetris.raw", 24
+			.import binary "tetris_chars.raw" //, 24
 
 
 

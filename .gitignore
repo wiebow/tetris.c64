@@ -6,3 +6,4 @@ bin/tetris1_BuildLog.txt
 bin/blocks_BuildLog.txt
 bin/input_BuildLog.txt
 *.prg
+bin/Startup_BuildLog.txt
