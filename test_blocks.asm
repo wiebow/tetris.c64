@@ -1,12 +1,40 @@
 /*
-
 ----------------------------------
 Tetris for 6502. (c) WdW 2015
 ----------------------------------
 */
 
-			.pc = $c000
+			.pc = $c000 "code"
 
+			jsr SetUp
+			jsr StartGame
+mainloop:
+			// timing
+			// wait for the raster to be at the bottom of the screen
+			lda $d012
+			cmp #$d0 			// 208
+			bne mainloop
+
+			inc $d020 			// show start of code
+
+			jsr GetKeyInput
+			jsr DropBlock
+			cmp #$02 			// new block needed??
+			bne !skip+
+			jsr NewBlock 		// select a new block
+			beq !skip+
+			brk 				// newblock returned 1. game over!
+!skip:
+			dec $d020 			// show end of code
+
+			jmp mainloop
+
+// ------------------------------------------------
+
+
+// main setup
+// this is called when the program starts
+SetUp:
 			// set the used video bank to bank 0 ($0000-$3fff)
 			// bits 0-1 control bank selection
 
@@ -14,7 +42,7 @@ Tetris for 6502. (c) WdW 2015
 			ora #$00000011			// select bank 0 
 			sta $dd00 				// and set register
 
-			// select the memory part in bank 0 where our character set data resides
+			// select the memory in bank 0 where our character set data resides
 			// this is controlled by bits 1-3
 
         	lda $d018 				// get chip memory control register
@@ -22,126 +50,55 @@ Tetris for 6502. (c) WdW 2015
     	    ora #%00001110          // use char set at $3800
 	        sta $d018 				// set register
 
-	        jsr clearScreen
-	        ldx #<playscreen
-	        ldy #>playscreen
-	        jsr printScreen
+	        // use the SID chip to generate random numbers.
+	        // we use this for block selection.
+	        // after setting this, $d41b will contain a number from 0-255
+	        lda #$ff 				// maximum frequency
+	        sta $d40e 				// set voice 3 frequency control low byte
+	        sta $d40f 				// and hi byte
+	        lda #$80 				// use noise waveform
+	        sta $d412 				// set voice 3 control register to waveform
 
-			// print and animation test
-
-			lda #14
-			sta blockXposition
-			lda #00
-			sta blockYposition
-			jsr SetScreenPosition
-
-			lda #$01
-			jsr SelectBlock
-			jsr PrintBlock
-
-			// test loop for input
-loop:
-			jsr GetKeyInput
-			jmp loop
+	        rts
 
 
+// starts a new game
+// level and drop delay have already been set
+// and score etc have been reset as well.
+StartGame:
+	        jsr ClearScreen 		// clear the screen and set colors
 
-// subroutine to clear the screen and color ram
-// also detroys sprite pointers.
-clearScreen:
-			lda #11 			// dark grey
-			sta $d020 			// set border color
-			sta $d021 			// set screen color
-			ldx #$00
-!loop:		
-			lda #$20			// space
-			sta $0400,x 		// store in screen ram
-			sta $0500,x
-			sta $0600,x
-			sta $0700,x
-			lda #13 			// light green
-			sta $d800,x 		// store in color ram
-			sta $d900,x
-			sta $da00,x
-			sta $db00,x
-			inx
-			bne !loop-
-			rts
+	        ldx #<playscreen 		// set hi byte ..
+	        ldy #>playscreen 		// and lo byte of screen data ..
+	        jsr PrintScreen 		// and print it.
+
+	        jsr NewBlock 			// get a new player block
+
+			lda #70 				// set the fall delay timer
+			sta fallDelay
+			sta fallDelayTimer
+			rts 
 
 
-// this subroutine prints a screen.
-// set x and y to the lo and hi bytes of the data to be read before
-// calling this.
-printScreen:
-			.const screenWidth = 21
-			.const screenHeight = 21
-
-			// first, set pointer to the start of data
-			stx readdata+1			// store in lda instruction
-			sty readdata+2 			// and store
-
-			// reset screen memory pointer
-			lda #10 				// start at column # 10
-			sta writedata+1
-			lda #$04
-			sta writedata+2
-
-			ldx #$00
-			ldy #$00
-readdata:
-			lda $1010,x 			// get screen data
-			bne writedata			// 0 marks end of data
-			rts 					// done!
-writedata:
-			sta $0410,y 			// store in screen memory
-			inx 					// update data read counter
-			bne !skip+ 				// no roll over?
-			inc readdata+2 			// go to next memory page
-!skip:
-			iny 					// update counter for this row
-			cpy #screenWidth		// this row done?
-			bne readdata 			// no, continue
-			ldy #$00 				// reset the row counter
-			lda writedata+1 		// get lo byte of current screen position
-			clc
-			adc #40 				// add 40 to that
-			bcc !skip+ 				// overflow?
-			inc writedata+2 		// then go to next memory page
-!skip:
-			sta writedata+1 		// store lo byte
-			jmp readdata 			// and continue
-
-
-// -----------------------------------------------
-
-
-
-
-
-
-// -----------------------------------------------
-
-
+// ------------------------------------------
 
 			// import game source files
 
 			.import source "blocks.asm"
 			.import source "input.asm"
-
+			.import source "screens.asm"
 
 			// import the game screen data
 			// it is pure data, so no need to skip metadata while importing
+			// data ends with a 0.
 playscreen:
 			.import binary "tetris_playscreen.raw"
-			.byte 0 			// mark the end of the screen data
+			.byte 0
+
+
 
 			// import the character set
 			// skip the 1st 24 bytes as they are metadata.
 
-			.pc = $3800
+			.pc = $3800 "character data"
 			.import binary "tetris_chars.raw" //, 24
-
-
-
-
-

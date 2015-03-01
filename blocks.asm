@@ -45,7 +45,7 @@ ydone:
 			inc screenMemory+1		// page boundery passed, increment screen memory hi byte
 xdone:
 			sta screenMemory		// store the screen memory low byte
-			rts 					// done!
+			rts
 
 
 
@@ -80,7 +80,7 @@ printLoop:
 			inx 					// inc the block data pointer
 			cpx #16 				// done 16 characters? (4x4)
 			bne !skip+ 				// continue printing if not
-			rts 					// done!
+			rts
 !skip:
 			iny						// inc the print counter
 			cpy #$04 				// each block is 4 characters wide, done for this row?
@@ -125,13 +125,13 @@ spaceLoop:
 			beq !skip+ 				// yes. no problem. continue check
 
 			lda #$01 				// no space for block. set flag
-			rts 					// done!
+			rts
 !skip:
 			inx 					// inc the block data pointer
 			cpx #16 				// done 16 characters? (4x4)
 			bne !skip+ 				// continue printing if not
 			lda #$00 				// all locations checked. done. clear flag
-			rts 					// done!
+			rts
 !skip:
 			iny						
 			cpy #$04 				
@@ -199,11 +199,8 @@ DownOneRow:
 			sta screenMemory 		// store new lo byte
 			rts
 
-
-
 // this subroutine will select a block.
 // set A register with block id before calling this subroutine
-
 SelectBlock:
 			sta currentBlockID 		// store the block id
 			tax
@@ -246,9 +243,68 @@ doBackward:
 			rts 					// done!
 
 
+// this subroutine updates the block fall timer...
+// and drops the block a row when needed.
+// A register holds: 0: nothing happened ...
+// 1: block fell, 2:block fell, new block needed.
+DropBlock:
+			dec fallDelayTimer 	// update the delay timer
+			beq !skip+ 			// drop the block if 0 is reached
+			lda #$00 			// nothing happened
+			rts
+!skip:
+			lda fallDelay 		// reset the block fall delay
+			sta fallDelayTimer
+
+			// drop the block
+
+			jsr EraseBlock 		// erase from screen
+			inc blockYposition 	// move 1 row down
+			jsr CheckBlockSpace // will it fit?
+			bne !skip+ 			// A is set to 1, so no.
+			jsr PrintBlock 		// yes. print it
+			lda #$01 			// status is block fell
+			rts
+!skip:
+			dec blockYposition 	// no. move back.
+			jsr PrintBlock 		// print it
+			lda #$02 			// new block needed
+			rts
+
+
+// selects a new random block
+// register A holds: 0 if all went well, 1 if new block overlaps screen data (game over!)
+NewBlock:
+			lda #15 				// put new block on 15,0
+			sta blockXposition
+			lda #00
+			sta blockYposition
+			jsr SetScreenPosition 
+
+			// choose new block
+getRandom:
+			lda $d41b 				// get a value of 0-255
+			and #%00000111			// only use 1-7. this is 1 too high
+			beq !skip+ 				// don't modify if it is 0
+			tax 					// lower the number by one
+			dex
+			txa
+!skip:
+			jsr SelectBlock 		// select it
+			jsr CheckBlockSpace 	// will it fit?
+			bne !skip+ 				// A is set to 1, so no
+			jsr PrintBlock 			// print it.
+			lda #$00 				// notify all is well.
+			rts
+!skip:
+			jsr PrintBlock 			// print it
+			lda #$01 				// notify that it doesnt fit
+			rts
+
+
 // ---------------------------------------------------------------------------------------------
 
-// some registers to store information in
+// registers to store information in
 
 blockXposition:
 			.byte 0 				// current player block x position
@@ -264,13 +320,11 @@ lastFrame:
 			.byte 0					// last animation frame for current block
 
 
-collisionBlockXposition:
-			.byte 0 				// x position of collision ghost block
-collisionBlockYposition:
-			.byte 0 				// y position of collision ghost block
 
-
-
+fallDelay:
+			.byte 0 				// delay between block drops for this level
+fallDelayTimer:
+			.byte 0 				// timer for delay
 
 
 // ---------------------------------------------------------------------------------------------
@@ -278,65 +332,152 @@ collisionBlockYposition:
 // arrays of block start and end animation frames.
 // example: block 0 animation starts at frame 0 and ends at frame 3
 
+//                0 1  2  3  4  5  6
 blockFrameStart:
-			.byte 0, 4
+			.byte 0,4, 8,12,14,16,18
 
 blockFrameEnd:
-			.byte 3, 7
+			.byte 3,7,11,13,15,17,18
 
 // these lo and hi byte pointers refer to the block data adress values
 
 frameArrayLo:
 			.byte <frame00, <frame01, <frame02, <frame03 		// block 0
 			.byte <frame04, <frame05, <frame06, <frame07 		// block 1
+			.byte <frame08, <frame09, <frame10, <frame11 		// block 2
+			.byte <frame12, <frame13					 		// block 3
+			.byte <frame14, <frame15					 		// block 4
+			.byte <frame16, <frame17					 		// block 5
+			.byte <frame18								 		// block 6
 
 frameArrayHi:
 			.byte >frame00, >frame01, >frame02, >frame03 		// block 0
 			.byte >frame04, >frame05, >frame06, >frame07 		// block 1
+			.byte >frame08, >frame09, >frame10, >frame11 		// block 2
+			.byte >frame12, >frame13					 		// block 3
+			.byte >frame14, >frame15					 		// block 4
+			.byte >frame16, >frame17					 		// block 5
+			.byte >frame18								 		// block 6
 
 // block0, 4 frames
 
 frame00:
-			.text " HH "
-			.text "  H "
-			.text "  H "
+			.text " II "
+			.text "  I "
+			.text "  I "
 			.text "    "
 frame01:
-			.text "   H"
-			.text " HHH"
+			.text "   I"
+			.text " III"
 			.text "    "
 			.text "    "
 frame02:
-			.text "  H "
-			.text "  H "
-			.text "  HH"
+			.text " I  "
+			.text " I  "
+			.text " II "
 			.text "    "
 frame03:
 			.text "    "
-			.text " HHH"
-			.text " H  "
+			.text " III"
+			.text " I  "
 			.text "    "
 
 // block1, 4 frames
 
 frame04:
-			.text "  I "
-			.text " II "
-			.text "  I "
+			.text "  G "
+			.text " GG "
+			.text "  G "
 			.text "    "
 frame05:
-			.text "  I "
-			.text " III"
+			.text "  G "
+			.text " GGG"
 			.text "    "
 			.text "    "
 frame06:
-			.text "  I "
-			.text "  II"
-			.text "  I "
+			.text "  G "
+			.text "  GG"
+			.text "  G "
 			.text "    "
 frame07:
 			.text "    "
-			.text " III"
-			.text "  I "
+			.text " GGG"
+			.text "  G "
 			.text "    "
 
+// block2, 4 frames
+
+frame08:
+			.text " HH "
+			.text " H  "
+			.text " H  "
+			.text "    "
+frame09:
+			.text "    "
+			.text "HHH "
+			.text "  H "
+			.text "    "
+frame10:
+			.text " H  "
+			.text " H  "
+			.text "HH  "
+			.text "    "
+frame11:
+			.text "H   "
+			.text "HHH "
+			.text "    "
+			.text "    "			
+
+// block3, 2 frames
+
+frame12:
+			.text " X  "
+			.text " XX "
+			.text "  X "
+			.text "    "
+frame13:
+			.text " XX "
+			.text "XX  "
+			.text "    "
+			.text "    "
+
+// block4, 2 frames
+
+frame14:
+			.text "  H "
+			.text " HH "
+			.text " H  "
+			.text "    "
+frame15:
+			.text "HH  "
+			.text " HH "
+			.text "    "
+			.text "    "
+
+//block5, 2 frames
+
+frame16:
+
+			.byte 32,92,32,32
+			.byte 32,93,32,32
+			.byte 32,93,32,32
+			.byte 32,94,32,32
+
+			// .text " K  "
+			// .text " K  "
+			// .text " K  "
+			// .text " K  "
+frame17:
+			.text "    "
+			.byte 89,90,90,91
+//			.text "YZZK"
+			.text "    "
+			.text "    "
+
+// block6, 1 frame
+
+frame18:
+			.text "    "
+			.text " JJ "
+			.text " JJ "
+			.text "    "

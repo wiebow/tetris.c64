@@ -20,12 +20,12 @@
 // collision detection etc is also included when movement is selected.
 
 GetKeyInput:
-			dec delayCounter 		// count down
-			beq continue 			// do nothing until the counter rolls over
-			rts
+//			dec keyDelayCounter 	// count down
+//			beq continue 			// do nothing until the counter rolls over
+//			rts
 continue:
 			lda inputDelay 			// get the delay value
-			sta delayCounter 		// and store it
+			sta keyDelayCounter 	// and store it
 			jsr GETIN 				// get the held key
 			sta keyPressed 			// store for later reference
 			bne !nextkey+ 			// A<>0, so a key is held
@@ -36,7 +36,7 @@ continue:
 			lda pauseFlag 			// yes, get the current pause flag
 			eor #%00000001 			// flip between 0 and 1
 			sta pauseFlag 			// store it
-			rts 					// done
+			rts
 !nextkey:
  			cmp #LEFT 				// left key held?
  			bne !nextkey+ 			// no, check for next
@@ -48,7 +48,7 @@ continue:
 			inc blockXposition 		// no. move it back
 !skip:
 			jsr PrintBlock
- 			rts 					// done!
+ 			rts
 !nextkey:
  			cmp #RIGHT 				// right key held?
  			bne !nextkey+ 			// no. check for next
@@ -60,7 +60,7 @@ continue:
  			dec blockXposition 		// don't move!
 !skip:
  			jsr PrintBlock 
- 			rts						// done!
+ 			rts
 !nextkey:
  			cmp #TURNCOUNTER 		// turn counter clockwise?
  			bne !nextkey+ 			// no
@@ -74,7 +74,7 @@ continue:
  			jsr AnimateBlock
 !skip:
  			jsr PrintBlock 			// draw the new block frame
- 			rts 					// done!
+ 			rts
 !nextkey:
 			cmp #TURNCLOCK 			// turn clockwise?
 			bne !nextkey+ 			// no
@@ -88,28 +88,28 @@ continue:
 			jsr AnimateBlock 		// ..
 !skip:
 			jsr PrintBlock 			// print the block with new frame
-			rts 					// done!
+			rts
 !nextkey:
 			cmp #DOWN 				// down one row?
 			bne !nextkey+ 			// no
 			jsr EraseBlock
 			inc blockYposition 		// yes. change block position
-
 			jsr CheckBlockSpace
 			beq !skip+
-			dec blockYposition		// cnnnot move down, so move back
-			jsr PrintBlock			// so print
-//			jsr NewBlock 			// and get a new block!
-									// this will also check for lines
+			dec blockYposition		// cannot move down, so move back
+			jsr PrintBlock			// and print
+			rts
 !skip:
-			jsr PrintBlock
-			rts 					// done!
+			lda fallDelay 			// reset the fall delay timer
+			sta fallDelayTimer 		// to avoid two movements close to each other.
+			jsr PrintBlock 			// print the block
+			rts
 !nextkey:
 			cmp #RESET 				// reset game?
 			bne !nextkey+
 			nop 					// reserved for later.
 !nextkey:
-			rts 					// no more keys! done.
+			rts
 
 
 // ------------------------------------------------
@@ -117,7 +117,7 @@ continue:
 pauseFlag:
 			.byte 0 				// game is pause when this is set to 1
 
-delayCounter:
+keyDelayCounter:
 			.byte 0					// if this reaches 0, the player input is read
 
 keyPressed:
