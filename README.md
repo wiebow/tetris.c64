@@ -1,6 +1,8 @@
 Tetris for the CBM64 in 6502 Assembly
 =====================================
 
+![tetris](http://4.bp.blogspot.com/-3khZKvT2fT4/VPSyqwjTJgI/AAAAAAAAO7k/2sfiNcAAOmg/s1600/32.PNG)
+
 The development of this game can be followed at [my blog](http://devdef.blogspot.nl).
 
 
