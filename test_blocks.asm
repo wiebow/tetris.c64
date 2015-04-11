@@ -10,23 +10,45 @@ Tetris for 6502. (c) WdW 2015
 			jsr StartGame
 mainloop:
 			// timing
-			// wait for the raster to be at the bottom of the screen
-			lda $d012
+			// wait for the raster to be at the bottom of the play screen
+			lda $d012 			// get raster line position
 			cmp #$d0 			// 208
-			bne mainloop
+			bne mainloop 		// not there yet.
 
 			inc $d020 			// show start of code
 
-			jsr GetKeyInput
-			jsr DropBlock
-			cmp #$02 			// new block needed??
-			bne !skip+
-			jsr NewBlock 		// select a new block
-			beq !skip+
-			brk 				// newblock returned 1. game over!
-!skip:
-			dec $d020 			// show end of code
+			lda linesMade 		// did we make lines?
+			beq !skip+ 			// no, continue with game
 
+			jsr FlashLines 		// show the lines made
+			beq mainloop 		// if A is 0 then we're not done flashing
+
+			// jsr AddScore		// add score
+			// jsr RemoveLines 	// then remove lines
+			// jsr Newblock
+
+			dec $d020
+			jmp mainloop
+
+!skip:
+			jsr GetKeyInput
+			jsr DropBlock 		// moves the block down if delay has passed
+			cmp #$02 			// new block needed??
+			bne endloop 		// no. end the loop 
+
+			// a new block is needed so we might have made line(s)
+
+			jsr CheckLines 		// check if line(s) has been made
+
+			lda linesMade 		// and???
+			bne endloop 		// yes. don't create a new block just yet, as the next
+								// loop will flash the lines and THEN create a new block
+
+			jsr NewBlock 		// select a new block
+			beq endloop			// a value of 0 means it fits, so continue
+			brk 				// newblock returned 1. game over!
+endloop:
+			dec $d020 			// show end of code
 			jmp mainloop
 
 // ------------------------------------------------
@@ -43,7 +65,7 @@ SetUp:
 			sta $dd00 				// and set register
 
 			// select the memory in bank 0 where our character set data resides
-			// this is controlled by bits 1-3
+			// in the selected video bank. this is controlled by bits 1-3
 
         	lda $d018 				// get chip memory control register
         							// 1110 = 14, so 14*1024=14336 ($3800 in hex)
@@ -53,6 +75,7 @@ SetUp:
 	        // use the SID chip to generate random numbers.
 	        // we use this for block selection.
 	        // after setting this, $d41b will contain a number from 0-255
+
 	        lda #$ff 				// maximum frequency
 	        sta $d40e 				// set voice 3 frequency control low byte
 	        sta $d40f 				// and hi byte
@@ -87,6 +110,7 @@ StartGame:
 			.import source "blocks.asm"
 			.import source "input.asm"
 			.import source "screens.asm"
+			.import source "lines.asm"
 
 			// import the game screen data
 			// it is pure data, so no need to skip metadata while importing
@@ -94,7 +118,6 @@ StartGame:
 playscreen:
 			.import binary "tetris_playscreen.raw"
 			.byte 0
-
 
 
 			// import the character set

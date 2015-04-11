@@ -3,11 +3,12 @@
 
 // code concerning blocks
 
-			.const screenMemory = $fb		// zero page pointer to a screen memory position
+			.const screenPointer = $fb		// zero page pointer to a screen memory position
+			.const screenPointer2 = $fd 	// 2nd pointer for copying data
 
 
 // translate x (column) and y (row) locations to screen memory positions
-// and store these in screenMemory zero page registers
+// and store these in screenPointer zero page registers
 // values are taken from blockx and yposition.
 
 SetScreenPosition:
@@ -15,9 +16,9 @@ SetScreenPosition:
 			// first, reset the screen pointer to $0400, the start of screen memory
 
 			lda #4
-			sta screenMemory+1 		// set hi byte
+			sta screenPointer+1 		// set hi byte
 			lda #0
-			sta screenMemory		// set low byte
+			sta screenPointer		// set low byte
 
 			// add the rows (y position) first. a=0 at this point.
 						
@@ -28,7 +29,7 @@ yloop:
 			clc
 			adc #40					// add a row (screen is 40 chars wide)
 			bcc !skip+ 				// no page boundery passed? then skip next instruction
-			inc screenMemory+1 		// page boundery passed, increment screen memory hi byte
+			inc screenPointer+1 		// page boundery passed, increment screen memory hi byte
 !skip:
 			dey						// decrement the y count
 			cpy #$00
@@ -42,9 +43,9 @@ ydone:
 			clc
 			adc blockXposition		// add the columns
 			bcc xdone 				// no page boundery passed? then skip next instruction
-			inc screenMemory+1		// page boundery passed, increment screen memory hi byte
+			inc screenPointer+1		// page boundery passed, increment screen memory hi byte
 xdone:
-			sta screenMemory		// store the screen memory low byte
+			sta screenPointer		// store the screen memory low byte
 			rts
 
 
@@ -75,7 +76,7 @@ printLoop:
 			lda $1010,x 		   	// get block data. the adress is modified at the start of this subroutine
 			cmp #$20 				// is it a space?
 		    beq !skip+ 				// then skip printing it
-			sta (screenMemory),y    // put it on the screen
+			sta (screenPointer),y    // put it on the screen
 !skip:
 			inx 					// inc the block data pointer
 			cpx #16 				// done 16 characters? (4x4)
@@ -120,7 +121,7 @@ spaceLoop:
 
 		    // check the position where data must be printed
 
-			lda (screenMemory),y    // load the data on this position
+			lda (screenPointer),y    // load the data on this position
 			cmp #$20 				// is it a space?
 			beq !skip+ 				// yes. no problem. continue check
 
@@ -145,7 +146,6 @@ spaceLoop:
 
 // erases a block on the screen
 // same as PrintBlock but outputting spaces
-
 EraseBlock:
 			jsr SetScreenPosition	// make sure we do the erasing on the right spot
 
@@ -167,7 +167,7 @@ eraseLoop:
 			cmp #$20 				// is it a space?
 		    beq !skip+ 				// then skip erasing it.
 		    lda #$20 				// use a space
-			sta (screenMemory),y    // and erase this block character.
+			sta (screenPointer),y    // and erase this block character.
 !skip:
 			inx 					// inc the block data pointer
 			cpx #16 				// done 16 characters? (4x4)
@@ -184,20 +184,19 @@ eraseLoop:
 			jmp eraseLoop 			// do the next row
 
 
-
-
-// this subroutine adjusts the screenmemory pointer so it
+// this subroutine adjusts the screenPointer pointer so it
 // points to the row exactly below it.
 
 DownOneRow:
-			lda screenMemory 		// add 40 to the screen memory pointer
+			lda screenPointer 		// add 40 to the screen memory pointer
 			clc
 			adc #40
 			bcc !skip+ 				// skip next instruction if page boundery was not passed
-			inc screenMemory+1 		// inc hi byte of the screen address
+			inc screenPointer+1 	// inc hi byte of the screen address
 !skip:
-			sta screenMemory 		// store new lo byte
+			sta screenPointer 		// store new lo byte
 			rts
+
 
 // this subroutine will select a block.
 // set A register with block id before calling this subroutine
@@ -324,7 +323,7 @@ lastFrame:
 fallDelay:
 			.byte 0 				// delay between block drops for this level
 fallDelayTimer:
-			.byte 0 				// timer for delay
+			.byte 0 				// current timer for delay
 
 
 // ---------------------------------------------------------------------------------------------
