@@ -8,5 +8,4 @@ bin/input_BuildLog.txt
 *.prg
 bin/Startup_BuildLog.txt
 bin/test_random_BuildLog.txt
-*.asm
 bin/lines_BuildLog.txt
