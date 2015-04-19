@@ -9,3 +9,4 @@ bin/input_BuildLog.txt
 bin/Startup_BuildLog.txt
 bin/test_random_BuildLog.txt
 bin/lines_BuildLog.txt
+test_random.asm

@@ -1,3 +1,4 @@
+
 /*
 ----------------------------------
 Tetris for 6502. (c) WdW 2015
@@ -11,21 +12,27 @@ Tetris for 6502. (c) WdW 2015
 mainloop:
 			// timing
 			// wait for the raster to be at the bottom of the play screen
+
 			lda $d012 			// get raster line position
-			cmp #$d0 			// 208
+			cmp #$d0 			// 208?
 			bne mainloop 		// not there yet.
 
 			inc $d020 			// show start of code
 
 			lda linesMade 		// did we make lines?
 			beq !skip+ 			// no, continue with game
-
-			jsr FlashLines 		// show the lines made
-			beq mainloop 		// if A is 0 then we're not done flashing
+			
+			jsr FlashLines 		// yes, show the lines made and flash them
+			lda totalFlashDelay // need to flash more?
+			bne mainloop 		// no.
 
 			// jsr AddScore		// add score
-			// jsr RemoveLines 	// then remove lines
-			// jsr Newblock
+			jsr RemoveLines 	// then remove lines
+			jsr NewBlock
+
+			// get rid of made lines counter
+			lda #$00
+			sta linesMade
 
 			dec $d020
 			jmp mainloop
@@ -38,15 +45,14 @@ mainloop:
 
 			// a new block is needed so we might have made line(s)
 
-			jsr CheckLines 		// check if line(s) has been made
-
-			lda linesMade 		// and???
-			bne endloop 		// yes. don't create a new block just yet, as the next
+			jsr CheckLines 		// check if line(s) has been made.
+			lda linesMade 		// get lines made value
+			bne endloop 		// not zero, so yes. don't create a new block just yet, as the next
 								// loop will flash the lines and THEN create a new block
 
 			jsr NewBlock 		// select a new block
 			beq endloop			// a value of 0 means it fits, so continue
-			brk 				// newblock returned 1. game over!
+			brk 				// NewBlock returned 1. game over!
 endloop:
 			dec $d020 			// show end of code
 			jmp mainloop
@@ -110,11 +116,13 @@ StartGame:
 			.import source "blocks.asm"
 			.import source "input.asm"
 			.import source "screens.asm"
-			.import source "lines.asm"
+			.import source "lines2.asm"
+			// .import source "well.asm"
 
 			// import the game screen data
-			// it is pure data, so no need to skip metadata while importing
+			// it is pure data, so no need to skip meta data while importing
 			// data ends with a 0.
+			
 playscreen:
 			.import binary "tetris_playscreen.raw"
 			.byte 0

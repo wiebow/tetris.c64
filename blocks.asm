@@ -4,51 +4,53 @@
 // code concerning blocks
 
 			.const screenPointer = $fb		// zero page pointer to a screen memory position
-			.const screenPointer2 = $fd 	// 2nd pointer for copying data
+			.const screenPointer2 = $fd 	// 2nd pointer to move data
+
+// sets screen memory pointer to x and y column
+// set X and Y register before calling this routine.
+SetScreenPointer:
+			stx screenPointer		// set low byte. use x immediately
+			lda #4
+			sta screenPointer+1 	// set hi byte
+
+			cpy #0					// at top of the screen?
+			beq !exit+				// then no change is needed
+			txa 					// get the current low byte
+!loop:
+			clc
+			adc #40					// add a row (screen is 40 chars wide)
+			bcc !skip+ 				// no page boundery passed? then skip next instruction
+			inc screenPointer+1 	// page boundery passed, increment screen memory hi byte
+!skip:
+			dey						// decrement the y count
+			bne !loop-				// do next row if more needed
+			sta screenPointer		// store the screen memory low byte
+!exit:
+			rts
+
+
+// this subroutine adjusts the screenPointer pointer so it
+// points to the row exactly below it.
+DownOneRow:
+			lda screenPointer 		// add 40 to the screen memory pointer
+			clc
+			adc #40
+			bcc !skip+ 				// skip next instruction if page boundery was not passed
+			inc screenPointer+1 	// inc hi byte of the screen address
+!skip:
+			sta screenPointer 		// store new lo byte
+			rts
 
 
 // translate x (column) and y (row) locations to screen memory positions
 // and store these in screenPointer zero page registers
 // values are taken from blockx and yposition.
 
-SetScreenPosition:
-
-			// first, reset the screen pointer to $0400, the start of screen memory
-
-			lda #4
-			sta screenPointer+1 		// set hi byte
-			lda #0
-			sta screenPointer		// set low byte
-
-			// add the rows (y position) first. a=0 at this point.
-						
-			ldy blockYposition		
-			cpy #0					// at top of the screen?
-			beq ydone				// then no change is needed
-yloop:
-			clc
-			adc #40					// add a row (screen is 40 chars wide)
-			bcc !skip+ 				// no page boundery passed? then skip next instruction
-			inc screenPointer+1 		// page boundery passed, increment screen memory hi byte
-!skip:
-			dey						// decrement the y count
-			cpy #$00
-			bne yloop				// do next row if needed
-ydone:
-			// add the columns (x position)
-
-			ldx blockXposition
-			cpx #0 					// at the leftmost position of the screen?
-			beq xdone				// then no change is needed
-			clc
-			adc blockXposition		// add the columns
-			bcc xdone 				// no page boundery passed? then skip next instruction
-			inc screenPointer+1		// page boundery passed, increment screen memory hi byte
-xdone:
-			sta screenPointer		// store the screen memory low byte
-			rts
-
-
+// SetScreenPosition:
+// 			ldx blockXposition
+// 			ldy blockYposition
+// 			jsr SetScreenPointer
+// 			rts
 
 
 // prints a block on the screen
@@ -56,9 +58,11 @@ xdone:
 // and SelectBlock must have been called before calling this subroutine
 
 PrintBlock:
-			jsr SetScreenPosition 	// ensure that we print on the right spot
+			ldx blockXposition 		// print to the correct place on screen
+			ldy blockYposition
+			jsr SetScreenPointer
 
-			// first, get pointer to the start of block data
+			// get pointer to the start of block data
 
 			ldx currentFrame 		// this has been set by calling SelectBlock or AnimateBlock
 
@@ -72,7 +76,6 @@ PrintBlock:
 			ldx #$00 				// reset the block data counter
 			ldy #$00 				// reset the print counter
 printLoop:
-
 			lda $1010,x 		   	// get block data. the adress is modified at the start of this subroutine
 			cmp #$20 				// is it a space?
 		    beq !skip+ 				// then skip printing it
@@ -100,7 +103,9 @@ printLoop:
 // A register is set according to outcome: 0 = no problem, 1 = no space
 
 CheckBlockSpace:
-			jsr SetScreenPosition 	// ensure that we check the right spot
+			ldx blockXposition
+			ldy blockYposition
+			jsr SetScreenPointer
 
 			// first, get pointer to the start of block data
 
@@ -147,7 +152,9 @@ spaceLoop:
 // erases a block on the screen
 // same as PrintBlock but outputting spaces
 EraseBlock:
-			jsr SetScreenPosition	// make sure we do the erasing on the right spot
+			ldx blockXposition
+			ldy blockYposition
+			jsr SetScreenPointer
 
 			// first, get pointer to the start of block data
 
@@ -182,20 +189,6 @@ eraseLoop:
 
 			ldy #$00 				// reset the counter for a new row
 			jmp eraseLoop 			// do the next row
-
-
-// this subroutine adjusts the screenPointer pointer so it
-// points to the row exactly below it.
-
-DownOneRow:
-			lda screenPointer 		// add 40 to the screen memory pointer
-			clc
-			adc #40
-			bcc !skip+ 				// skip next instruction if page boundery was not passed
-			inc screenPointer+1 	// inc hi byte of the screen address
-!skip:
-			sta screenPointer 		// store new lo byte
-			rts
 
 
 // this subroutine will select a block.
@@ -274,20 +267,24 @@ DropBlock:
 // selects a new random block
 // register A holds: 0 if all went well, 1 if new block overlaps screen data (game over!)
 NewBlock:
-			lda #15 				// put new block on 15,0
-			sta blockXposition
-			lda #00
-			sta blockYposition
-			jsr SetScreenPosition 
+			ldx #15 				// put new block on 15,0
+			ldy #00
+			jsr SetScreenPointer
+			stx blockXposition 		// save the position
+			sty blockYposition
 
 			// choose new block
 getRandom:
 			lda $d41b 				// get a value of 0-255
 			and #%00000111			// only use 1-7. this is 1 too high
 			beq !skip+ 				// don't modify if it is 0
-			tax 					// lower the number by one
-			dex
-			txa
+
+			sbc #$01
+
+//			tax 					// lower the number by one
+//			dex
+//			txa
+
 !skip:
 			jsr SelectBlock 		// select it
 			jsr CheckBlockSpace 	// will it fit?
