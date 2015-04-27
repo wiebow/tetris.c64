@@ -103,10 +103,9 @@ continue:
 			lda fallDelay 			// reset the fall delay timer
 			sta fallDelayTimer 		// to avoid two movements close to each other.
 
-			// moving the block down gives you points
-			// give 2 points.
+			// moving the block down yourself gives you a point
 
-			lda #2
+			lda #1
 			sta addition
 			lda #0
 			sta addition+1

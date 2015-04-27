@@ -17,23 +17,28 @@ mainloop:
 			cmp #$d0 			// 208?
 			bne mainloop 		// not there yet.
 
+			// continue
+
 			lda #$01
 			sta $d020 			// show start of code
 
 			lda linesMade 		// did we make lines?
 			beq !skip+ 			// no, continue with game
+
+			// we made lines
 			
 			jsr FlashLines 		// yes, show the lines made and flash them
 			lda totalFlashDelay // need to flash more?
-			bne mainloop 		// no.
+			bne mainloop 		// yes, so go back to beginning of loop
 
-			// jsr AddLineScore	// add score made by lines
+			// flashing is all done.
+
+			jsr AddLineScore	// add score made by lines
+			jsr PrintScore 		// show the score
 			jsr RemoveLines 	// then remove lines
-			jsr NewBlock
-
-			// get rid of made lines counter
 			lda #$00
-			sta linesMade
+			sta linesMade 		// clear the lines made counter
+			jsr NewBlock 		// create a new block
 
 			lda #$00
 			sta $d020
@@ -41,9 +46,9 @@ mainloop:
 			jmp mainloop
 
 !skip:
-			jsr GetKeyInput
-			jsr DropBlock 		// moves the block down if delay has passed
-			cmp #$02 			// new block needed??
+			jsr GetKeyInput 	// get player input
+			jsr DropBlock 		// move the block down if delay has passed
+			cmp #$02 			// is a new block needed??
 			bne endloop 		// no. end the loop 
 
 			// a new block is needed so we might have made line(s)
@@ -52,6 +57,8 @@ mainloop:
 			lda linesMade 		// get lines made value
 			bne endloop 		// not zero, so yes. don't create a new block just yet, as the next
 								// loop will flash the lines and THEN create a new block
+
+			// we made no lines. so continue
 
 			jsr NewBlock 		// select a new block
 			beq endloop			// a value of 0 means it fits, so continue
@@ -129,15 +136,14 @@ currentLevel:
 			.byte 0
 
 
-
-
 			// import the game screen data
 			// it is pure data, so no need to skip meta data while importing
 			// data ends with a 0.
 			
 playscreen:
 			.import binary "tetris_playscreen.raw"
-			.byte 0
+			.byte 0sys 49152
+			
 
 
 			// import the character set

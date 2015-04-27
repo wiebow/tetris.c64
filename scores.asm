@@ -5,13 +5,24 @@
 
 
 // this looks at the made lines amount, and the current
-// level, and adds the appropriate score: level+1 * line score
+// level, and adds the appropriate score: (level+1) * line score
 AddLineScore:
-
+			ldy linesMade 			// get made lines amount
+			dey 					// minus 1 to get currect offset to score
+			lda lineScore1,y 		// get 1st byte
+			sta addition+0 			// put in addition 
+			lda lineScore2,y 		// same for middle byte
+			sta addition+1
+			lda lineScore3,y 		// and last byte
+			sta addition+2
 			ldx currentLevel 		// get the current player level
-			inx
-
+									// this is how many times the score is added
+!loop:
+			jsr AddScore 			// add the score
+			dex
+			bpl !loop- 				// keep doing this until all levels have been added
 			rts
+
 // http://tetris.wikia.com/wiki/Scoring
 
 
@@ -23,6 +34,8 @@ ResetScore:
 			sta score+2
 			rts
 
+// this adds the score that is put in the
+// addition bytes.
 AddScore:
 			sed 					// set decimal mode
 			clc 					// clear the carry bit
@@ -38,10 +51,12 @@ AddScore:
 			cld 					// clear decimal mode
 			rts
 
+
+// prints the score into the playing field
 PrintScore:
 
 			// set cursor position
-			clc
+			clc 					// clear carry bit so we set cursor
 			ldx #4 					// row 4
 			ldy #24 				// column 24
 			jsr plot 				// move cursor so we can use chrout
@@ -75,9 +90,17 @@ addition:
 
 
 
-lineScores:
-			.byte 40,00,00 		// 1 line,   40
-			.byte 00,01,00 		// 2 lines, 100
-			.byte 00,03,00 		// 3 lines, 300
-			.byte 00,12,00 		// tetris, 1200
+// lines:         1  2  3  4
+lineScore1:
+//			.byte 40,00,00,00 	// left most byte of score
+			.byte 64,00,00,00 	// left most byte of score < 64 = 40 in dec
+lineScore2:
+//			.byte 00,01,03,12	// middle byte
+			.byte 00,01,03,18	// middle byte < 18 = 12 in dec
+lineScore3:
+			.byte 00,00,00,00   // right most byte of score
 
+//				  40
+//					100
+//						300
+//							1200
