@@ -102,6 +102,18 @@ continue:
 !skip:
 			lda fallDelay 			// reset the fall delay timer
 			sta fallDelayTimer 		// to avoid two movements close to each other.
+
+			// moving the block down gives you points
+			// give 2 points.
+
+			lda #2
+			sta addition
+			lda #0
+			sta addition+1
+			sta addition+2
+			jsr AddScore
+			jsr PrintScore
+
 			jsr PrintBlock 			// print the block
 			rts
 !nextkey:

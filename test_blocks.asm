@@ -17,7 +17,8 @@ mainloop:
 			cmp #$d0 			// 208?
 			bne mainloop 		// not there yet.
 
-			inc $d020 			// show start of code
+			lda #$01
+			sta $d020 			// show start of code
 
 			lda linesMade 		// did we make lines?
 			beq !skip+ 			// no, continue with game
@@ -26,7 +27,7 @@ mainloop:
 			lda totalFlashDelay // need to flash more?
 			bne mainloop 		// no.
 
-			// jsr AddScore		// add score
+			// jsr AddLineScore	// add score made by lines
 			jsr RemoveLines 	// then remove lines
 			jsr NewBlock
 
@@ -34,7 +35,9 @@ mainloop:
 			lda #$00
 			sta linesMade
 
-			dec $d020
+			lda #$00
+			sta $d020
+
 			jmp mainloop
 
 !skip:
@@ -54,7 +57,8 @@ mainloop:
 			beq endloop			// a value of 0 means it fits, so continue
 			brk 				// NewBlock returned 1. game over!
 endloop:
-			dec $d020 			// show end of code
+			lda #$00
+			sta $d020 			// show end of code
 			jmp mainloop
 
 // ------------------------------------------------
@@ -93,7 +97,6 @@ SetUp:
 
 // starts a new game
 // level and drop delay have already been set
-// and score etc have been reset as well.
 StartGame:
 	        jsr ClearScreen 		// clear the screen and set colors
 
@@ -101,6 +104,7 @@ StartGame:
 	        ldy #>playscreen 		// and lo byte of screen data ..
 	        jsr PrintScreen 		// and print it.
 
+	        jsr ResetScore 			// reset player score
 	        jsr NewBlock 			// get a new player block
 
 			lda #70 				// set the fall delay timer
@@ -117,7 +121,15 @@ StartGame:
 			.import source "input.asm"
 			.import source "screens.asm"
 			.import source "lines2.asm"
-			// .import source "well.asm"
+			.import source "scores.asm"
+
+// ------------------------------------------
+
+currentLevel:
+			.byte 0
+
+
+
 
 			// import the game screen data
 			// it is pure data, so no need to skip meta data while importing
