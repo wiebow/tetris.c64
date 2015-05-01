@@ -4,29 +4,6 @@
 			.const chrout = $ffd2 			// routine to print character
 
 
-// this looks at the made lines amount, and the current
-// level, and adds the appropriate score: (level+1) * line score
-AddLineScore:
-			ldy linesMade 			// get made lines amount
-			dey 					// minus 1 to get currect offset to score
-			lda lineScore1,y 		// get 1st byte
-			sta addition+0 			// put in addition 
-			lda lineScore2,y 		// same for middle byte
-			sta addition+1
-			lda lineScore3,y 		// and last byte
-			sta addition+2
-			ldx currentLevel 		// get the current player level
-									// this is how many times the score is added
-!loop:
-			jsr AddScore 			// add the score
-			dex
-			bpl !loop- 				// keep doing this until all levels have been added
-			rts
-
-// http://tetris.wikia.com/wiki/Scoring
-
-
-
 ResetScore:
 			lda #$00
 			sta score+0
@@ -81,26 +58,44 @@ PrintScore:
 			bpl !loop- 				// continue
 			rts
 
+
+// this looks at the made lines amount, and the current
+// level, and adds the appropriate score: (level+1) * line score
+AddLineScore:
+			ldy linesMade 			// get made lines amount
+			dey 					// minus 1 to get currect offset to lineScore array
+			lda lineScore1,y 		// get 1st byte
+			sta addition+0 			// put in addition 
+			lda lineScore2,y 		// same for middle byte
+			sta addition+1
+			lda lineScore3,y 		// and last byte
+			sta addition+2
+
+			ldx currentLevel 		// get the current player level
+									// this is how many times the score is added
+!loop:
+			jsr AddScore 			// add the score
+			dex
+			bpl !loop- 				// keep doing this until all levels have been added
+			rts
+
+// http://tetris.wikia.com/wiki/Scoring
+
+
 // ---------------------------
 
 score:
-			.byte 0,0,0 		// 24 bits score value. little endian so LSB first.
+			.byte 0,0,0 		// 24 bits score value, LSB first.
 addition:
 			.byte 0,0,0 		// score to add goes here
 
 
 
-// lines:         1  2  3  4
+// lines:          1   2   3   4
 lineScore1:
-//			.byte 40,00,00,00 	// left most byte of score
-			.byte 64,00,00,00 	// left most byte of score < 64 = 40 in dec
+			.byte $40, 00, 00, 00 	// left most byte of scores
 lineScore2:
-//			.byte 00,01,03,12	// middle byte
-			.byte 00,01,03,18	// middle byte < 18 = 12 in dec
+			.byte  00, 01, 03,$12	// middle byte
 lineScore3:
-			.byte 00,00,00,00   // right most byte of score
+			.byte  00, 00, 00, 00   // right most byte of score
 
-//				  40
-//					100
-//						300
-//							1200

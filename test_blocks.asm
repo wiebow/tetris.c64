@@ -99,6 +99,9 @@ SetUp:
 	        lda #$80 				// use noise waveform
 	        sta $d412 				// set voice 3 control register to waveform
 
+	        lda #153 				// print everything in light green ...
+	        jsr $ffd2 				// from now on
+
 	        rts
 
 
@@ -133,7 +136,7 @@ StartGame:
 // ------------------------------------------
 
 currentLevel:
-			.byte 0
+			.byte 1
 
 
 			// import the game screen data
@@ -142,7 +145,7 @@ currentLevel:
 			
 playscreen:
 			.import binary "tetris_playscreen.raw"
-			.byte 0sys 49152
+			.byte 0
 			
 
 
