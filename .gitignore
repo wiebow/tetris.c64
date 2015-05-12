@@ -10,3 +10,5 @@ bin/Startup_BuildLog.txt
 bin/test_random_BuildLog.txt
 bin/lines_BuildLog.txt
 test_random.asm
+bin/test_scores_BuildLog.txt
+bin/scores_BuildLog.txt

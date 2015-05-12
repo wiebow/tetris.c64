@@ -1,15 +1,17 @@
 
 
-			.const plot = 	$fff0 			// kernel routine to set cursor position
-			.const chrout = $ffd2 			// routine to print character
+// code concerning the player score
 
 
+
+// resets player score and total lines made.
 ResetScore:
 			lda #$00
 			sta score+0
 			sta score+1
 			sta score+2
 			rts
+
 
 // this adds the score that is put in the
 // addition bytes.
@@ -79,8 +81,6 @@ AddLineScore:
 			bpl !loop- 				// keep doing this until all levels have been added
 			rts
 
-// http://tetris.wikia.com/wiki/Scoring
-
 
 // ---------------------------
 
@@ -90,7 +90,7 @@ addition:
 			.byte 0,0,0 		// score to add goes here
 
 
-
+// http://tetris.wikia.com/wiki/Scoring
 // lines:          1   2   3   4
 lineScore1:
 			.byte $40, 00, 00, 00 	// left most byte of scores

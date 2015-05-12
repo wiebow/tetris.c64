@@ -1,7 +1,69 @@
 
 
+// code concerning made lines
+
+
 			.const flashDelay = 15 				// delay in frames.
 			.const flashTime = flashDelay * 6 	// how long to flash. 3 times.
+
+
+
+ResetLinesMade:
+			lda #$00
+			sta linesTotal
+			sta linesTotal+1
+			rts
+
+
+// adds the linesMade value to the total lines made value on the screen.
+AddLinesTotal:
+			sed 					// set decimal mode
+			clc 					// clear the carry bit
+			lda linesTotal+0  		// get current total lines value
+			adc linesMade   		// add the made lines.
+			sta linesTotal+0 		// store it.
+			lda linesTotal+1 		// and the 2nd byte.
+			adc #$00 				// always 0, we can add 4 lines max.
+			sta linesTotal+1
+			cld 					// clear decimal mode
+			rts
+
+
+//this updates the LINES value on screen
+PrintTotalLinesMade:
+
+			clc 					// position cursor
+			ldx #12
+			ldy #26
+			jsr plot
+
+			// do 1st byte.
+			// only do the first 4 bits of this byte
+
+			lda linesTotal+1
+			and #%00001111 			// get rid of leftmost bits
+			clc
+			adc #$30 				// create a screen code
+			jsr chrout 				// print it
+
+			// do 2nd byte
+
+			lda linesTotal 			
+			pha 					// push to stack
+			lsr 					// shift 4 times to right
+			lsr
+			lsr
+			lsr
+			clc 					
+			adc #$30 				// add #$30 to it to get a screencode
+			jsr chrout 				// print it
+			pla 					// restore value
+			and #%00001111 			// get rid of leftmost bits
+			clc
+			adc #$30 				// create a screen code
+			jsr chrout 				// print it
+			rts
+
 
 
 // this function will check for lines made.
@@ -231,16 +293,16 @@ MoveLineData:
 
 
 
-
-
-
 // ---------------------------------------------------------
 
 rowsToCheck: 
 			.byte 0 				// amount of rows left to check for lines. this is set to 20 when starting.
 
 linesMade:
-			.byte 0 				// amount of lines made
+			.byte 0 				// amount of lines made after dropping a block
+
+linesTotal:
+			.byte 0,0 				// total of lines made in this game so far, LSB first
 
 currentRow:
 			.byte 0 				// we're currently at this row

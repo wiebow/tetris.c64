@@ -1,21 +1,23 @@
 
-// Tetris for 6502. (c) WdW 2015
 
 // code concerning blocks
+
 
 			.const screenPointer = $fb		// zero page pointer to a screen memory position
 			.const screenPointer2 = $fd 	// 2nd pointer to move data
 
+
 // sets screen memory pointer to x and y column
 // set X and Y register before calling this routine.
 SetScreenPointer:
-			stx screenPointer		// set low byte. use x immediately
+			stx screenPointer		// set low byte. use x immediately...
+		
 			lda #4
 			sta screenPointer+1 	// set hi byte
 
 			cpy #0					// at top of the screen?
 			beq !exit+				// then no change is needed
-			txa 					// get the current low byte
+			txa 					// get the current low byte of screen pointer
 !loop:
 			clc
 			adc #40					// add a row (screen is 40 chars wide)
@@ -40,17 +42,6 @@ DownOneRow:
 !skip:
 			sta screenPointer 		// store new lo byte
 			rts
-
-
-// translate x (column) and y (row) locations to screen memory positions
-// and store these in screenPointer zero page registers
-// values are taken from blockx and yposition.
-
-// SetScreenPosition:
-// 			ldx blockXposition
-// 			ldy blockYposition
-// 			jsr SetScreenPointer
-// 			rts
 
 
 // prints a block on the screen
@@ -94,8 +85,6 @@ printLoop:
 
 			ldy #$00 				// reset the counter for a new row
 			jmp printLoop 			// do the next row
-
-
 
 
 // Checks if there is space for a block to be printed.
@@ -147,8 +136,6 @@ spaceLoop:
 			jmp spaceLoop 			
 
 
-
-
 // erases a block on the screen
 // same as PrintBlock but outputting spaces
 EraseBlock:
@@ -192,7 +179,7 @@ eraseLoop:
 
 
 // this subroutine will select a block.
-// set A register with block id before calling this subroutine
+// set .A register with block id before calling this subroutine
 SelectBlock:
 			sta currentBlockID 		// store the block id
 			tax
@@ -265,28 +252,60 @@ DropBlock:
 
 
 // selects a new random block
+// it will take the id from the nextBlockID address.
+// the next block will be again determined, and printed on the screen
+
 // register A holds: 0 if all went well, 1 if new block overlaps screen data (game over!)
 NewBlock:
-			ldx #15 				// put new block on 15,0
-			ldy #00
-			jsr SetScreenPointer
+
+			// nextBlockID was printed as the next block.
+			// set location to remove from screen
+
+			ldx #25 				// erase block from 25,15
+			ldy #15
 			stx blockXposition 		// save the position
 			sty blockYposition
+			jsr SetScreenPointer
 
-			// choose new block
+			// select and save the ID
+			// because we create it later on
+
+			lda nextBlockID
+			pha
+
+			jsr SelectBlock 		// select it
+			jsr EraseBlock 			// remove it
+
+			// get the id of the NEW block
+			// and print it on the bottomright of the screen
 getRandom:
 			lda $d41b 				// get a value of 0-255
 			and #%00000111			// only use 1-7. this is 1 too high
 			beq !skip+ 				// don't modify if it is 0
-
-			sbc #$01
-
-//			tax 					// lower the number by one
-//			dex
-//			txa
-
+			sbc #$01 				// lower it by one. we need 0-6
 !skip:
+			sta nextBlockID 		// save next block id
+
+			jsr SetScreenPointer 	// restore screenpointer to 25,15
+									// as set previously
+			lda nextBlockID
+			jsr SelectBlock
+			jsr PrintBlock 			// print it.
+
+			// done.
+
+			// create the new player block
+
+			ldx #15 				// put new block on 15,0
+			ldy #00
+			stx blockXposition 		// save the position
+			sty blockYposition
+			jsr SetScreenPointer
+
+			pla 					// restore the player block id
+			sta currentBlockID 		// put in current id address
 			jsr SelectBlock 		// select it
+
 			jsr CheckBlockSpace 	// will it fit?
 			bne !skip+ 				// A is set to 1, so no
 			jsr PrintBlock 			// print it.
@@ -294,7 +313,7 @@ getRandom:
 			rts
 !skip:
 			jsr PrintBlock 			// print it
-			lda #$01 				// notify that it doesnt fit
+			lda #$01 				// notify that it doesnt fit!!!
 			rts
 
 
@@ -308,14 +327,15 @@ blockYposition:
 			.byte 0 				// current player block y position
 currentBlockID: 					
 			.byte 0 				// current block ID
+nextBlockID: 					
+			.byte 0 				// this is the next block to fall
+
 currentFrame:
 			.byte 0  				// frame of current block
 firstFrame: 			
 			.byte 0					// first animation frame for current block
 lastFrame: 				
 			.byte 0					// last animation frame for current block
-
-
 
 fallDelay:
 			.byte 0 				// delay between block drops for this level
