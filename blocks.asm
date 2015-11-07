@@ -11,7 +11,7 @@
 // set X and Y register before calling this routine.
 SetScreenPointer:
 			stx screenPointer		// set low byte. use x immediately...
-		
+
 			lda #4
 			sta screenPointer+1 	// set hi byte
 
@@ -128,12 +128,12 @@ spaceLoop:
 			lda #$00 				// all locations checked. done. clear flag
 			rts
 !skip:
-			iny						
-			cpy #$04 				
+			iny
+			cpy #$04
 			bne spaceLoop
-			jsr DownOneRow 
-			ldy #$00 				
-			jmp spaceLoop 			
+			jsr DownOneRow
+			ldy #$00
+			jmp spaceLoop
 
 
 // erases a block on the screen
@@ -212,7 +212,7 @@ doForward:
 			rts 					// done!
 doBackward:
 			lda currentFrame 		// get the current frame.
-			cmp firstFrame 			// already at the first frame? 
+			cmp firstFrame 			// already at the first frame?
 			beq !skip+ 				// then reset to last frame
 			dec currentFrame 		// no. go back one frame
 			rts 					// done!
@@ -278,11 +278,13 @@ NewBlock:
 
 			// get the id of the NEW block
 			// and print it on the bottomright of the screen
-getRandom:
-			lda $d41b 				// get a value of 0-255
-			and #%00000111			// only use 1-7. this is 1 too high
-			beq !skip+ 				// don't modify if it is 0
-			sbc #$01 				// lower it by one. we need 0-6
+
+			jsr GetRandom
+// getRandom:
+			// lda $d41b 				// get a value of 0-255
+			// and #%00000111			// only use 1-7. this is 1 too high
+			// beq !skip+ 				// don't modify if it is 0
+			// sbc #$01 				// lower it by one. we need 0-6
 !skip:
 			sta nextBlockID 		// save next block id
 
@@ -325,16 +327,16 @@ blockXposition:
 			.byte 0 				// current player block x position
 blockYposition:
 			.byte 0 				// current player block y position
-currentBlockID: 					
+currentBlockID:
 			.byte 0 				// current block ID
-nextBlockID: 					
+nextBlockID:
 			.byte 0 				// this is the next block to fall
 
 currentFrame:
 			.byte 0  				// frame of current block
-firstFrame: 			
+firstFrame:
 			.byte 0					// first animation frame for current block
-lastFrame: 				
+lastFrame:
 			.byte 0					// last animation frame for current block
 
 fallDelay:
@@ -442,7 +444,7 @@ frame11:
 			.text "H   "
 			.text "HHH "
 			.text "    "
-			.text "    "			
+			.text "    "
 
 // block3, 2 frames
 

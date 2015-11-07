@@ -1,0 +1,13 @@
+parsing
+flex pass 1
+flex pass 2
+Output pass
+
+Memory Map
+----------
+$3800-$3f3f character data
+$c000-$c930 code
+
+Writing file: bin/main_Compiled.prg
+Writing Vice symbol file: bin\main.vs
+Writing Symbol file: bin\main.sym

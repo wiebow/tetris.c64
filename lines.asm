@@ -2,11 +2,8 @@
 
 // code concerning made lines
 
-
-			.const flashDelay = 15 				// delay in frames.
+			.const flashDelay = 10 				// delay in frames.
 			.const flashTime = flashDelay * 6 	// how long to flash. 3 times.
-
-
 
 ResetLinesMade:
 			lda #$00
@@ -48,13 +45,13 @@ PrintTotalLinesMade:
 
 			// do 2nd byte
 
-			lda linesTotal 			
+			lda linesTotal
 			pha 					// push to stack
 			lsr 					// shift 4 times to right
 			lsr
 			lsr
 			lsr
-			clc 					
+			clc
 			adc #$30 				// add #$30 to it to get a screencode
 			jsr chrout 				// print it
 			pla 					// restore value
@@ -110,7 +107,7 @@ readStart:
 
 			inc linesMade 			// add line to score
 			lda linesMade 			// get amount of lines made so far
-			cmp #4 					// have we done 4? 
+			cmp #4 					// have we done 4?
 			beq readDone			// yes. all done.
 nextRow:
 			inc currentRow 			// go to the next row
@@ -152,7 +149,7 @@ FlashLines:
 
 			ldx #$00 				// reset screen buffer memory pointer
 updateLine:
-			txa 					// save mem buffer index to 
+			txa 					// save mem buffer index to
 			pha 					// the stack
 
 			ldy currentLineIndex 	// get the index if the line we are going to show/hide
@@ -161,7 +158,7 @@ updateLine:
 			ldx #12 				// set x position
 			jsr SetScreenPointer 	// set screenpointer to this position
 
-			pla 					// retrieve mem buffer index from 
+			pla 					// retrieve mem buffer index from
 			tax 					// the stack
 
 			ldy #$00 				// reset line character counter
@@ -230,7 +227,7 @@ SetLinePointers:
 			// the row number in .Y
 			dey 						// go up one row
 			jsr SetScreenPointer 		// set screen pointer
-			lda screenPointer 			
+			lda screenPointer
 			sta screenPointer2 			// copy values to pointer2
 			lda screenPointer+1
 			sta screenPointer2+1
@@ -295,7 +292,7 @@ MoveLineData:
 
 // ---------------------------------------------------------
 
-rowsToCheck: 
+rowsToCheck:
 			.byte 0 				// amount of rows left to check for lines. this is set to 20 when starting.
 
 linesMade:

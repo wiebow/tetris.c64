@@ -14,8 +14,9 @@
 
 
 // this subroutine gets keyboard input during the game.
+// it also moves and prints the affected block
 // the input has a delay of 10 updates.
-// only one key at a time is registered
+// and only one key at a time is registered
 
 // collision detection etc is also included when movement is selected.
 
@@ -25,7 +26,8 @@ GetKeyInput:
 //			rts
 continue:
 			lda inputDelay 			// get the delay value
-			sta keyDelayCounter 	// and store it
+			sta keyDelayCounter 	// and restore it
+
 			jsr GETIN 				// get the held key
 			sta keyPressed 			// store for later reference
 			bne !nextkey+ 			// A<>0, so a key is held
@@ -59,7 +61,7 @@ continue:
  			beq !skip+ 				// A register is 0, so yes
  			dec blockXposition 		// don't move!
 !skip:
- 			jsr PrintBlock 
+ 			jsr PrintBlock
  			rts
 !nextkey:
  			cmp #TURNCOUNTER 		// turn counter clockwise?

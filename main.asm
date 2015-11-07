@@ -4,36 +4,31 @@
 Tetris for 6502. (c) WdW 2015
 ----------------------------------
 */
-
 			.const plot = 	$fff0 			// kernel routine to set cursor position
 			.const chrout = $ffd2 			// routine to print character
-
-			.const linesPerLevel = 2 //10		// level advance threshold
-			.const delayChange = 3 			// game goes this much faster each level.
-
+			.const linesPerLevel = 10		// level advance threshold
+			.const delayChange = 4 			// game goes this much faster each level.
 
 			.pc = $c000 "code"
 
 			jsr SetUp
 			jsr StartGame
 mainloop:
-			// timing
-			// wait for the raster to be at the bottom of the play screen
 
+
+waitraster:
 			lda $d012 				// get raster line position
-			cmp #$d0 				// 208?
-			bne mainloop 			// not there yet.
+			cmp #208				// wait for bottom of screen
+			bne waitraster
 
-			// continue
+			lda #$01				// debug
+			sta $d020
 
-			lda #$01
-			sta $d020 				// show start of code
+			jsr UpdateRandom 		// update the random seed
 
 			lda linesMade 			// did we make lines?
 			beq continueloop		// no, continue with game
 
-			// we made lines!!!
-			
 			jsr FlashLines 			// yes, show the lines made and flash them
 			lda totalFlashDelay 	// need to flash more?
 			bne mainloop 			// yes, so go back to beginning of loop
@@ -53,33 +48,33 @@ mainloop:
 			adc linesMade 			// add the made lines
 			sta levelLinesCounter
 
-			lda #$00
-			sta linesMade 		// clear the lines made counter
+			lda #$00				// clear the lines made counter
+			sta linesMade
 
 			// go up a level?
 
-			lda levelLinesCounter
+			lda levelLinesCounter	// get lines made so far in this level
 			cmp #linesPerLevel 		// did we make enough to go up a level?
-			bcc nolevelinc 			// no: If the C flag is 0, then A (unsigned) < NUM (unsigned) and BCC will branch
+			bcc nolevelinc 			// no: If the C flag is 0, then A (unsigned) < NUM (unsigned)
+									// and BCC will branch
 
 			jsr AddLevel 			// go up 1 level
 
 nolevelinc:
-
-			// lines stuff all done.
+			// lines stuff is all done.
 
 			jsr NewBlock 		// create a new block
-
-			lda #$00
-			sta $d020
-
-			jmp mainloop
+			jmp mainloop 		// and continue
 
 continueloop:
+
+			// we made no line, so do input
+			// and check for lines made
+
 			jsr GetKeyInput 	// get player input
 			jsr DropBlock 		// move the block down if delay has passed
 			cmp #$02 			// a 2 means that a new block is needed
-			bne endloop 		// no. end the loop 
+			bne endloop 		// no. end the loop
 
 			// a new block is needed so we might have made line(s)
 
@@ -97,8 +92,9 @@ continueloop:
 
 			brk 				// NewBlock returned 1. game over!
 endloop:
-			lda #$00
-			sta $d020 			// show end of code
+			lda #$0f 			// debug
+			sta $d020
+
 			jmp mainloop
 
 // ------------------------------------------------
@@ -111,7 +107,7 @@ SetUp:
 			// bits 0-1 control bank selection
 
 			lda $dd00	 			// get data port register A
-			ora #$00000011			// select bank 0 
+			ora #$00000011			// select bank 0
 			sta $dd00 				// and set register
 
 			// select the memory in bank 0 where our character set data resides
@@ -122,15 +118,7 @@ SetUp:
     	    ora #%00001110          // use char set at $3800
 	        sta $d018 				// set register
 
-	        // use the SID chip to generate random numbers.
-	        // we use this for block selection.
-	        // after setting this, $d41b will contain a number from 0-255
-
-	        lda #$ff 				// maximum frequency
-	        sta $d40e 				// set voice 3 frequency control low byte
-	        sta $d40f 				// and hi byte
-	        lda #$80 				// use noise waveform
-	        sta $d412 				// set voice 3 control register to waveform
+	        jsr SetupRandom 		// set the rnd seed
 
 	        lda #153 				// print everything in light green ...
 	        jsr $ffd2 				// from now on
@@ -147,7 +135,7 @@ StartGame:
 	        ldy #>playscreen 		// and lo byte of screen data ..
 	        jsr PrintScreen 		// and print it.
 
-	        jsr ResetScore 			// reset player score, 
+	        jsr ResetScore 			// reset player score,
 	        jsr ResetLinesMade		// and total lines made
 
 	        lda #$00 				// reset the lines counter ...
@@ -163,18 +151,11 @@ StartGame:
 			// NewBlock will use this value for a new block
 			// and set the next block value again for the next call
 
-			lda $d41b 				// get a value of 0-255
-			and #%00000111			// only use 1-7. this is 1 too high
-			beq !skip+ 				// don't modify if it is 0
-			sbc #$01 				// lower it by one. we need 0-6
-!skip:
+			jsr GetRandom
 			sta nextBlockID 		// this will be printed as the next block
 									// to fall
-
 	        jsr NewBlock 			// get a new player block
-
-			rts 
-
+			rts
 
 // up the player level
 AddLevel:
@@ -219,8 +200,8 @@ AddLevel:
 
 //prints the current play level on the screen
 PrintLevel:
-			clc 					// position cursor at 26,9
-			ldx #9
+			clc 					// position cursor at 26,8
+			ldx #8
 			ldy #26
 			jsr plot
 
@@ -235,23 +216,22 @@ PrintLevel:
 
 			// do 2nd byte
 
-			lda gameLevel+0 			
+			lda gameLevel+0
 			pha 					// push to stack
 			lsr 					// shift 4 times to right
 			lsr
 			lsr
 			lsr
-			clc 					
+			clc
 			adc #$30 				// add #$30 to it to get a screencode
 			jsr chrout 				// print it
+
 			pla 					// restore value
 			and #%00001111 			// get rid of leftmost bits
 			clc
 			adc #$30 				// create a screen code
 			jsr chrout 				// print it
 			rts
-
-
 
 // ------------------------------------------
 
@@ -260,8 +240,9 @@ PrintLevel:
 			.import source "blocks.asm"
 			.import source "input.asm"
 			.import source "screens.asm"
-			.import source "lines2.asm"
+			.import source "lines.asm"
 			.import source "scores.asm"
+			.import source "random.asm"
 
 // ------------------------------------------
 
@@ -281,11 +262,11 @@ levelLinesCounter:
 			// import the game screen data
 			// it is pure data, so no need to skip meta data while importing
 			// data ends with a 0.
-			
+
 playscreen:
 			.import binary "tetris_playscreen.raw"
 			.byte 0
-			
+
 
 
 			// import the character set
