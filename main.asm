@@ -4,7 +4,7 @@
 Tetris for 6502. (c) WdW 2015
 ----------------------------------
 */
-			.const plot = 	$fff0 			// kernel routine to set cursor position
+			.const plot = 	$fff0 			// routine to set cursor position
 			.const chrout = $ffd2 			// routine to print character
 			.const linesPerLevel = 10		// level advance threshold
 			.const delayChange = 4 			// game goes this much faster each level.
@@ -18,13 +18,13 @@ mainloop:
 
 waitraster:
 			lda $d012 				// get raster line position
-			cmp #208				// wait for bottom of screen
+			cmp #208				// wait for bottom of play screen
 			bne waitraster
 
 			lda #$01				// debug
 			sta $d020
 
-			jsr UpdateRandom 		// update the random seed
+			jsr UpdateRandom 		// update the random number
 
 			lda linesMade 			// did we make lines?
 			beq continueloop		// no, continue with game
@@ -80,7 +80,7 @@ continueloop:
 
 			jsr CheckLines 		// check if line(s) has been made.
 			lda linesMade 		// get lines made value
-			bne endloop 		// yes. don't create a new block just yet, as the next
+			bne endloop 		// more than 0! don't create a new block just yet, as the next
 								// loop will flash the lines and THEN create a new block
 
 			// we made no lines. so continue
@@ -92,6 +92,7 @@ continueloop:
 
 			brk 				// NewBlock returned 1. game over!
 endloop:
+
 			lda #$0f 			// debug
 			sta $d020
 

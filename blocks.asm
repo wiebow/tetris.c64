@@ -229,7 +229,7 @@ doBackward:
 DropBlock:
 			dec fallDelayTimer 	// update the delay timer
 			beq !skip+ 			// drop the block if 0 is reached
-			lda #$00 			// nothing happened
+			lda #$00 			// return 0 = nothing happened
 			rts
 !skip:
 			lda fallDelay 		// reset the block fall delay
@@ -258,6 +258,11 @@ DropBlock:
 // register A holds: 0 if all went well, 1 if new block overlaps screen data (game over!)
 NewBlock:
 
+			// reset the block fall delay
+
+			lda fallDelay
+			sta fallDelayTimer
+
 			// nextBlockID was printed as the next block.
 			// set location to remove from screen
 
@@ -268,7 +273,7 @@ NewBlock:
 			jsr SetScreenPointer
 
 			// select and save the ID
-			// because we create it later on
+			// because we will create the block later on
 
 			lda nextBlockID
 			pha
@@ -280,14 +285,7 @@ NewBlock:
 			// and print it on the bottomright of the screen
 
 			jsr GetRandom
-// getRandom:
-			// lda $d41b 				// get a value of 0-255
-			// and #%00000111			// only use 1-7. this is 1 too high
-			// beq !skip+ 				// don't modify if it is 0
-			// sbc #$01 				// lower it by one. we need 0-6
-!skip:
 			sta nextBlockID 		// save next block id
-
 			jsr SetScreenPointer 	// restore screenpointer to 25,15
 									// as set previously
 			lda nextBlockID

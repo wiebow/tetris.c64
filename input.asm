@@ -1,50 +1,48 @@
 
+			.const KEYPRESSED = $cb 	// scnkey puts code of held key here.
 
-			.const GETIN = $ffe4 		// kernal routine for reading the keyboard
+			// keycodes
 
-			.const LEFT = 44 			// , <
-			.const RIGHT = 46	 		// . >
-			.const TURNCOUNTER = 65		// A
-			.const TURNCLOCK = 83	 	// S
-			.const DOWN = 13 			// ENTER
-			.const PAUSE = 80 			// P
-			.const RESET = 133	 		// F1
+			.const LEFT = 47 			// , <
+			.const RIGHT = 44	 		// . >
+			.const TURNCOUNTER = 10		// A
+			.const TURNCLOCK = 13	 	// S
+			.const DOWN = 1 			// ENTER
+			.const PAUSE = 41 			// P
+			.const RESET = 4	 		// F1
+			.const NOKEY = 64 			// hehe
 
-			.const inputDelay = 10	 	// update delay between input checks
+			.const INPUTDELAY = 7	 	// update delay between input checks
 
 
 // this subroutine gets keyboard input during the game.
 // it also moves and prints the affected block
-// the input has a delay of 10 updates.
-// and only one key at a time is registered
-
-// collision detection etc is also included when movement is selected.
+// only one key at a time is registered
+// collision detection etc is also included when move is made.
 
 GetKeyInput:
-//			dec keyDelayCounter 	// count down
-//			beq continue 			// do nothing until the counter rolls over
-//			rts
-continue:
-			lda inputDelay 			// get the delay value
-			sta keyDelayCounter 	// and restore it
+			lda KEYPRESSED 			// get held key code
+			cmp previousKey 		// is it a different key than before?
+			bne !skip+	 			// if yes, then skip the current input delay
+									// because we want snappy controls
+doDelay:
+			dec keyDelayCounter 	// count down
+			beq !skip+
+			rts
+!skip:
+			ldx #INPUTDELAY 		// get the delay value
+			stx keyDelayCounter 	// and restore it
 
-			jsr GETIN 				// get the held key
-			sta keyPressed 			// store for later reference
-			bne !nextkey+ 			// A<>0, so a key is held
-			rts 					// no key held
-!nextkey:
-			cmp #PAUSE 				// pause key held?
-			bne !nextkey+ 			// no continue
-			lda pauseFlag 			// yes, get the current pause flag
-			eor #%00000001 			// flip between 0 and 1
-			sta pauseFlag 			// store it
+			sta previousKey 		// save the held key
+			cmp #NOKEY 				// none?
+			bne !nextkey+
 			rts
 !nextkey:
- 			cmp #LEFT 				// left key held?
- 			bne !nextkey+ 			// no, check for next
+			cmp #LEFT 				// left key held?
+			bne !nextkey+ 			// if not check next key
+
 			jsr EraseBlock 			// remove block on this position
 			dec blockXposition 		// alter block position
-
 			jsr CheckBlockSpace 	// will it fit?
 			beq !skip+ 				// yes. print it
 			inc blockXposition 		// no. move it back
@@ -52,76 +50,86 @@ continue:
 			jsr PrintBlock
  			rts
 !nextkey:
- 			cmp #RIGHT 				// right key held?
- 			bne !nextkey+ 			// no. check for next
- 			jsr EraseBlock 			// remove block on this position
- 			inc blockXposition
-
+  			cmp #RIGHT
+  			bne !nextkey+
+  			jsr EraseBlock
+  			inc blockXposition
+  			jsr CheckBlockSpace
+ 			beq !skip+
+  			dec blockXposition
+!skip:
+  			jsr PrintBlock
+  			rts
+!nextkey:
+  			cmp #TURNCOUNTER 		// turn counter-clockwise held?
+  			bne !nextkey+ 			// no
+  			jsr EraseBlock 			// remove block on this position
+  			lda #$01 				// yes. 1 means counter
+ 			jsr AnimateBlock 		// rotate it
  			jsr CheckBlockSpace 	// will it fit?
- 			beq !skip+ 				// A register is 0, so yes
- 			dec blockXposition 		// don't move!
+ 			beq !skip+ 				// yes, print it
+ 			lda #$00 				// no
+  			jsr AnimateBlock 		// turn it back
+!skip:
+  			jsr PrintBlock
+  			rts
+!nextkey:
+ 			cmp #TURNCLOCK
+ 			bne !nextkey+
+ 			jsr EraseBlock
+ 			lda #$00
+ 			jsr AnimateBlock
+ 			jsr CheckBlockSpace
+ 			beq !skip+
+ 			lda #$01
+ 			jsr AnimateBlock
 !skip:
  			jsr PrintBlock
  			rts
 !nextkey:
- 			cmp #TURNCOUNTER 		// turn counter clockwise?
- 			bne !nextkey+ 			// no
- 			jsr EraseBlock 			// remove block on this position
- 			lda #$01 				// yes. 1 means counter
- 			jsr AnimateBlock 		// and go
+			cmp #DOWN
+			bne !nextkey+
 
- 			jsr CheckBlockSpace
- 			beq !skip+
- 			lda #$00
- 			jsr AnimateBlock
-!skip:
- 			jsr PrintBlock 			// draw the new block frame
- 			rts
-!nextkey:
-			cmp #TURNCLOCK 			// turn clockwise?
-			bne !nextkey+ 			// no
-			jsr EraseBlock 			// get rid of block on this position
-			lda #$00 				// yes
-			jsr AnimateBlock 		// do it
-
-			jsr CheckBlockSpace 	// will it fit?
-			beq !skip+ 				// yes. so print it
-			lda #$01 				// no, rotate back
-			jsr AnimateBlock 		// ..
-!skip:
-			jsr PrintBlock 			// print the block with new frame
-			rts
-!nextkey:
-			cmp #DOWN 				// down one row?
-			bne !nextkey+ 			// no
 			jsr EraseBlock
-			inc blockYposition 		// yes. change block position
+			inc blockYposition
 			jsr CheckBlockSpace
 			beq !skip+
-			dec blockYposition		// cannot move down, so move back
-			jsr PrintBlock			// and print
+
+			// block doesn't fit
+			dec blockYposition
+			jsr PrintBlock
+
+			lda #$04 				// we made block drop
+			sta fallDelayTimer 		// so create new one without delay
 			rts
 !skip:
-			lda fallDelay 			// reset the fall delay timer
-			sta fallDelayTimer 		// to avoid two movements close to each other.
+			jsr PrintBlock
 
-			// moving the block down yourself gives you a point
+ 			lda #$04 	 			// have a smaller falldelay
+ 			sta fallDelayTimer 		// as we move down ourselves
+
+ 			// moving the block down gives points
 
 			lda #1
-			sta addition
-			lda #0
-			sta addition+1
-			sta addition+2
-			jsr AddScore
-			jsr PrintScore
-
-			jsr PrintBlock 			// print the block
+ 			sta addition
+ 			lda #0
+ 			sta addition+1
+ 			sta addition+2
+ 			jsr AddScore
+ 			jsr PrintScore
 			rts
 !nextkey:
 			cmp #RESET 				// reset game?
 			bne !nextkey+
-			nop 					// reserved for later.
+			nop 					// add  later
 !nextkey:
+			// cmp #PAUSE
+			// bne !nextkey+
+			// lda pauseFlag 			// get the current pause flag
+			// eor #%00000001 			// flip between 0 and 1
+			// sta pauseFlag 			// store it
+			// rts
+nokey:
 			rts
 
 
@@ -131,7 +139,7 @@ pauseFlag:
 			.byte 0 				// game is pause when this is set to 1
 
 keyDelayCounter:
-			.byte 0					// if this reaches 0, the player input is read
+			.byte INPUTDELAY		// if this reaches 0, the player input is read
 
-keyPressed:
-			.byte 0
+previousKey:
+			.byte 64				// previous key held
