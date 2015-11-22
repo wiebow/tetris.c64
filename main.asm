@@ -72,6 +72,12 @@ continueloop:
 			// and check for lines made
 
 			jsr GetKeyInput 	// get player input
+
+			lda pauseFlag 		// are we in pause mode?
+			bne endloop 		// if yes then skip game logic
+
+			jsr GetJoyInput 	// get joystick input
+
 			jsr DropBlock 		// move the block down if delay has passed
 			cmp #$02 			// a 2 means that a new block is needed
 			bne endloop 		// no. end the loop
@@ -254,8 +260,6 @@ gameLevel:
 			.byte 0,0 					// values for printing the current level. LSB first.
 
 
-
-
 levelLinesCounter:
 			.byte 0 					// this byte holds lines made after last
 										// level increase. threshold is declared on top of file.
@@ -273,5 +277,6 @@ playscreen:
 			// import the character set
 			// skip the 1st 24 bytes as they are metadata.
 
-			.pc = $3800 "character data"
+.pc = $3800 "character data"
+
 			.import binary "tetris_chars.raw" //, 24

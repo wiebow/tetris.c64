@@ -48,7 +48,7 @@ PrintScore:
 			lsr
 			lsr
 			lsr
-			clc 					
+			clc
 			adc #$30 				// add #$30 to it to get a screencode
 			jsr chrout 				// print it
 			pla 					// restore value
@@ -67,7 +67,7 @@ AddLineScore:
 			ldy linesMade 			// get made lines amount
 			dey 					// minus 1 to get currect offset to lineScore array
 			lda lineScore1,y 		// get 1st byte
-			sta addition+0 			// put in addition 
+			sta addition+0 			// put in addition
 			lda lineScore2,y 		// same for middle byte
 			sta addition+1
 			lda lineScore3,y 		// and last byte
