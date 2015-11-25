@@ -82,6 +82,45 @@ AddLineScore:
 			rts
 
 
+
+
+//prints the current play level on the screen
+PrintLevel:
+			clc 					// position cursor at 26,8
+			ldx #8
+			ldy #26
+			jsr plot
+
+			// do 1st byte.
+			// only do the first 4 bits of this byte
+
+			lda gameLevel+1
+			and #%00001111 			// get rid of leftmost bits
+			clc
+			adc #$30 				// create a screen code
+			jsr chrout 				// print it
+
+			// do 2nd byte
+
+			lda gameLevel+0
+			pha 					// push to stack
+			lsr 					// shift 4 times to right
+			lsr
+			lsr
+			lsr
+			clc
+			adc #$30 				// add #$30 to it to get a screencode
+			jsr chrout 				// print it
+
+			pla 					// restore value
+			and #%00001111 			// get rid of leftmost bits
+			clc
+			adc #$30 				// create a screen code
+			jsr chrout 				// print it
+			rts
+
+
+
 // ---------------------------
 
 score:
