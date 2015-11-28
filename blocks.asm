@@ -44,6 +44,19 @@ DownOneRow:
 			rts
 
 
+// this subroutine adjusts the screenPointer pointer so it
+// points to the row exactly above it.
+UpOneRow:
+			lda screenPointer 		// dec 40 from the screen memory pointer
+			sec
+			sbc #40
+			bcs !skip+ 				// skip next instruction if page boundery was not passed
+			dec screenPointer+1 	// dec hi byte of the screen address
+!skip:
+			sta screenPointer 		// store new lo byte
+			rts
+
+
 // prints a block on the screen
 // x and y position but be set for the use of SetScreenPosition ...
 // and SelectBlock must have been called before calling this subroutine

@@ -22,12 +22,7 @@ StartPlayMode:
 			sta fallDelayTimer 		// current timer for next block
 
 // --
-
-			// print the play screen
-
-	        ldx #<playscreen 		// set hi byte...
-	        ldy #>playscreen 		// and lo byte of screen data
-	        jsr PrintScreen 		// and print it
+			jsr PrintPlayScreen
 
 	        // set up player stats
 
@@ -141,12 +136,9 @@ endplay:
 // ------------------------------------------------
 
 EndPlayMode:
-
-//			brk
-
 			lda #MODE_GAMEOVER
 			sta gameMode
-//			jsr StartGameOverMode
+			jsr StartGameOverMode
 			rts
 
 // -------------------------------------------------
@@ -190,6 +182,35 @@ AddLevel:
 			sta fallDelay 			// store the new delay value
 			sta fallDelayTimer 		// reset the current delay counter
 			rts
+
+
+// --------------------------------------------------
+
+
+PrintPlayScreen:
+
+			// set start of data
+
+			lda #<playscreen
+			sta dataSourceLo
+			lda #>playscreen
+			sta dataSourceHi
+
+			// set data dimensions
+
+			lda #21
+			sta dataWidth
+			lda #21
+			sta dataHeight
+
+			// set start of area to print to
+
+			lda #04
+			sta dataDestinationHi
+			lda #10
+			sta dataDestinationLo
+
+			jmp WriteScreenData
 
 // -----------------------------------------------------
 

@@ -61,8 +61,9 @@ loopstart:
 			bne loopstart
 
 .if (DEBUG) {
-			lda #$01
+			lda #$0f
 			sta $d020
+			sta $d021
 }
 			// determine game mode and update accordingly
 
@@ -82,7 +83,7 @@ loopstart:
 !skip:
 			cmp #MODE_GAMEOVER
 			bne !skip+
-
+			jsr UpdateGameOverMode
 			jmp loopend
 !skip:
 			cmp #MODE_ENTERNAME
@@ -90,8 +91,9 @@ loopstart:
 loopend:
 
 .if (DEBUG) {
-			lda #$0f
+			lda #11
 			sta $d020
+			sta $d021
 }
 			jmp loopstart
 
@@ -104,8 +106,6 @@ gameMode:
 
 			// import game source files
 
-			.import source "play.asm"
-
 			.import source "blocks.asm"
 			.import source "input.asm"
 			.import source "screens.asm"
@@ -113,19 +113,22 @@ gameMode:
 			.import source "scores.asm"
 			.import source "random.asm"
 
+			.import source "play.asm"
+			.import source "gameover.asm"
 
 			// import game data files
 
-			// import the game screen data
-			// it is pure data, so no need to skip meta data while importing
-			// data ends with a 0.
+			// import the game screen data files
+			// it is pure data, so no need to skip meta data
+			// from char pad while importing
 
 playscreen:
 			.import binary "tetris_playscreen.raw"
-			.byte 0
+gameoverText:
+			.import binary "tetris_gameover.raw"
 
 			// import the character set
 
 .pc = $3800 "character data"
 
-			.import binary "tetris_chars.raw" //, 24
+			.import binary "tetris_chars.raw"

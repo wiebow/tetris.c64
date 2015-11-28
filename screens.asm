@@ -7,6 +7,8 @@
 .const screenHeight = 21
 
 
+// ----------------------------------------------
+
 // subroutine to clear the screen and color ram
 // also detroys sprite pointers.
 ClearScreen:
@@ -28,49 +30,6 @@ ClearScreen:
 			inx 				// increment counter
 			bne !loop- 			// continue?
 			rts
-
-// ---------------------------------------------
-
-// this subroutine prints a screen.
-// set x and y to the lo and hi bytes of the data to be read before ..
-// calling this.
-PrintScreen:
-			// first, set pointer to the start of data
-			stx readdata+1			// store in lda instruction
-			sty readdata+2 			// and store
-
-			// reset screen memory pointer
-			lda #10 				// start at column # 10
-			sta writedata+1
-			lda #$04
-			sta writedata+2
-
-			ldx #$00
-			ldy #$00
-readdata:
-			lda $1010,x 			// get screen data
-			bne writedata			// 0 marks end of data
-			rts
-writedata:
-			sta $0410,y 			// store in screen memory
-			inx 					// update data read counter
-			bne !skip+ 				// no roll over?
-			inc readdata+2 			// go to next memory page
-!skip:
-			iny 					// update counter for this row
-			cpy #screenWidth		// this row done?
-			bne readdata 			// no, continue
-			ldy #$00 				// reset the row counter
-			lda writedata+1 		// get lo byte of current screen position
-			clc
-			adc #40 				// add 40 to that
-			bcc !skip+ 				// overflow?
-			inc writedata+2 		// then go to next memory page
-!skip:
-			sta writedata+1 		// store lo byte
-			jmp readdata 			// and continue
-
-
 
 // ---------------------------------------------
 
@@ -175,6 +134,74 @@ PrintPaused:
 			pla  					// restore text index
 			tax
 			jmp !loop-
+
+
+// ------------------------------------------------
+
+
+WriteScreenData:
+			// get the source address
+
+			lda dataSourceLo
+			sta read+1
+			lda dataSourceHi
+			sta read+2
+
+			// get the destination address
+
+			lda dataDestinationLo
+			sta write+1
+			lda dataDestinationHi
+			sta write+2
+
+			ldx #$00 				// reset read index
+			ldy #$00 				// reset write index
+
+			// start copy
+read:
+			lda $1000,x 			// get data
+write:
+			sta $1000,y 			// store at destination
+			inx 					// update read counter
+			bne !skip+ 				// roll over?
+			inc read+2  			// yes. go to next memory page
+!skip:
+			iny 					// update row counter
+			cpy dataWidth			// this row done?
+			bne read 	 			// no, continue
+			ldy #$00 				// reset the row counter
+			lda write+1 			// get lo byte of current screen position
+			clc
+			adc #40 				// add 40 to that, goto next row
+			bcc !skip+ 				// overflow?
+			inc write+2  			// then go to next memory page
+!skip:
+			sta write+1 			// store lo byte
+
+			dec dataHeight 			// update counter
+			lda dataHeight
+			bne read 				// not all rows done yet
+			rts
+
+// where is the data coming from?
+dataSourceHi:
+			.byte 0
+dataSourceLo:
+			.byte 0
+
+// what is the data size?
+dataWidth:
+			.byte 0
+dataHeight:
+			.byte 0
+
+// where does it need to go?
+// this is a screen memory location
+dataDestinationHi:
+			.byte 0
+dataDestinationLo:
+			.byte 0
+
 
 // -----------------------------------------------
 
