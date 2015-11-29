@@ -47,30 +47,39 @@ Tetris for 6502. (c) WdW 2015
 	        lda #153 				// print everything in light green ...
 	        jsr $ffd2 				// from now on
 
-			// initial setup done. select mode and call mode entry routine.
+			// initial setup done
+			//select mode and call mode entry routine.
 
-			lda #MODE_PLAY
+			lda #MODE_ATTRACT
 			sta gameMode
-			jsr StartPlayMode
+			jsr StartAttractMode
 
 // --------------------------------------------------
 
 loopstart:
+
+.if (DEBUG) {
+	lda #11
+	sta $d020
+	sta $d021
+}
+
 			lda $d012 			// get raster line position
 			cmp #208			// wait for bottom of play area
 			bne loopstart
 
 .if (DEBUG) {
-			lda #$0f
-			sta $d020
-			sta $d021
+	lda #$0f
+	sta $d020
+	sta $d021
 }
 			// determine game mode and update accordingly
 
 			lda gameMode
 			cmp #MODE_ATTRACT
 			bne !skip+
-			jmp loopend
+			jsr UpdateAttractMode
+			jmp loopstart
 !skip:
 			cmp #MODE_SELECTLEVEL
 			bne !skip+
@@ -90,11 +99,6 @@ loopstart:
 			bne loopend
 loopend:
 
-.if (DEBUG) {
-			lda #11
-			sta $d020
-			sta $d021
-}
 			jmp loopstart
 
 // ------------------------------------------
@@ -115,6 +119,7 @@ gameMode:
 
 			.import source "play.asm"
 			.import source "gameover.asm"
+			.import source "attract.asm"
 
 			// import game data files
 
@@ -122,10 +127,20 @@ gameMode:
 			// it is pure data, so no need to skip meta data
 			// from char pad while importing
 
+.pc = $4000 "screen data"
+
 playscreen:
 			.import binary "tetris_playscreen.raw"
 gameoverText:
 			.import binary "tetris_gameover.raw"
+titleScreenData:
+			.import binary "tetris_titlescreen.raw"
+keysScreenData:
+			.import binary "tetris_keys.raw"
+creditsScreenData:
+			.import binary "tetris_credits.raw"
+selectScreenData:
+			.import binary "tetris_select_and_high.raw"
 
 			// import the character set
 

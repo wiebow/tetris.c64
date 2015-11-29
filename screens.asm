@@ -22,7 +22,7 @@ ClearScreen:
 			sta $0500,x
 			sta $0600,x
 			sta $0700,x
-			lda #13 			// light green
+			lda #00 			// light green
 			sta $d800,x 		// store in color ram
 			sta $d900,x
 			sta $da00,x
@@ -138,6 +138,9 @@ PrintPaused:
 
 // ------------------------------------------------
 
+// this routine will copy data to another memory location
+// in this case the screen memory
+// source and dimensions must be set before calling this
 
 WriteScreenData:
 			// get the source address
