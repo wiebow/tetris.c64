@@ -330,6 +330,82 @@ NewBlock:
 			rts
 
 
+// -------------------------------------------------
+
+BlockLeft:
+			jsr EraseBlock 			// remove block on this position
+			dec blockXposition 		// alter block position
+			jsr CheckBlockSpace 	// will it fit?
+			beq !skip+ 				// yes. print it
+			inc blockXposition 		// no. move it back
+!skip:
+			jsr PrintBlock
+ 			rts
+
+BlockRight:
+  			jsr EraseBlock
+  			inc blockXposition
+  			jsr CheckBlockSpace
+ 			beq !skip+
+  			dec blockXposition
+!skip:
+  			jsr PrintBlock
+  			rts
+
+BlockDown:
+			jsr EraseBlock
+			inc blockYposition
+			jsr CheckBlockSpace
+			beq !skip+
+
+			// block doesn't fit
+			dec blockYposition
+			jsr PrintBlock
+
+			lda #$04 				// we made block drop
+			sta fallDelayTimer 		// so create new one without delay
+			rts
+!skip:
+			jsr PrintBlock
+
+ 			lda #$04 	 			// have a smaller falldelay
+ 			sta fallDelayTimer 		// as we move down ourselves
+
+ 			// moving the block down gives points
+
+			lda #1
+ 			sta addition
+ 			lda #0
+ 			sta addition+1
+ 			sta addition+2
+ 			jsr AddScore
+ 			jsr PrintScore
+			rts
+
+BlockRotateCCW:
+  			jsr EraseBlock 			// remove block on this position
+  			lda #$01 				// yes. 1 means counter clock wise
+ 			jsr AnimateBlock 		// rotate it
+ 			jsr CheckBlockSpace 	// will it fit?
+ 			beq !skip+ 				// yes, print it
+ 			lda #$00 				// no
+  			jsr AnimateBlock 		// turn it back
+!skip:
+  			jsr PrintBlock
+  			rts
+
+BlockRotateCW:
+ 			jsr EraseBlock
+ 			lda #$00
+ 			jsr AnimateBlock
+ 			jsr CheckBlockSpace
+ 			beq !skip+
+ 			lda #$01
+ 			jsr AnimateBlock
+!skip:
+ 			jsr PrintBlock
+ 			rts
+
 // ---------------------------------------------------------------------------------------------
 
 // registers to store information in
