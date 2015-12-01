@@ -41,7 +41,6 @@ Tetris for 6502. (c) WdW 2015
 	        sta $d018 				// set register
 
 	        jsr SetupRandom 		// set the rnd seed
-
 	        jsr ClearScreen 		// clear the screen and set colors
 
 	        lda #153 				// print everything in light green ...
@@ -59,7 +58,7 @@ Tetris for 6502. (c) WdW 2015
 loopstart:
 
 .if (DEBUG) {
-	lda #11
+	lda #12
 	sta $d020
 	sta $d021
 }
@@ -83,6 +82,7 @@ loopstart:
 !skip:
 			cmp #MODE_SELECTLEVEL
 			bne !skip+
+//			jsr UpdateSelectLevelMode
 			jmp loopend
 !skip:
 			cmp #MODE_PLAY
@@ -105,6 +105,8 @@ loopend:
 
 gameMode:
 			.byte 0
+pauseFlag:
+			.byte 0 				// game is pause when this is set to 1
 
 // ------------------------------------------
 
@@ -126,6 +128,8 @@ gameMode:
 			// import the game screen data files
 			// it is pure data, so no need to skip meta data
 			// from char pad while importing
+
+// ------------------------------------------
 
 .pc = $4000 "screen data"
 

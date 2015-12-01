@@ -50,21 +50,30 @@ StartAttractMode:
 
 UpdateAttractMode:
 			dec attractDelay
-			beq triggered 		// swap screen when triggered
+			beq triggered 			// swap screen when triggered
 
 			// check for key or joy button press
 
-
+			jsr GetKeyInput
+			lda inputResult
+			cmp #DOWN 				// enter pressed?
+			beq !skip+ 				// yes
+			jsr GetJoyInput
+			lda inputResult
+			cmp #TURNCLOCK 				// joy button pressed?
+			beq !skip+ 					// yes
 			rts
+!skip:
+			jmp EndAttractMode		// start the game
 triggered:
-			lda #ATTRACT_DELAY 	// reset the delay
+			lda #ATTRACT_DELAY 		// reset the delay
 			sta attractDelay
 
-			inc attractStep 	// go to next screen
+			inc attractStep 		// go to next screen
 			lda attractStep
-			cmp #3 				// have we done 3 screens?
-			bne !skip+			// no. continue cycle
-			lda #STEP_TITLE     // yes. reset cycle
+			cmp #3 					// have we done 3 screens?
+			bne !skip+				// no. continue cycle
+			lda #STEP_TITLE    	 // yes. reset cycle
 			sta attractStep
 !skip:
 			// set data dimensions
@@ -108,29 +117,21 @@ triggered:
 			lda #>keysScreenData
 			sta dataSourceHi
 			jmp WriteScreenData
-// !nextstep:
-// 			cmp #STEP_HISCORE
-// 			bne !nextstep+
-// 			lda #<selectScreenData
-// 			sta dataSourceLo
-// 			lda #>selectScreenData
-// 			sta dataSourceHi
-// 			jsr WriteScreenData
-
-			// print hi scores
-
-			rts
 !nextstep:
-
-			// this is select difficulty
-
 			rts
 
 // -----------------------------------------
 
 EndAttractMode:
 
-			lda #MODE_ENTERNAME
+			lda #MODE_PLAY
 			sta gameMode
-
+			jsr StartPlayMode
 			rts
+
+
+//			lda #MODE_SELECTLEVEL
+//			sta gameMode
+//			jsr StartSelectLevelMode
+//			brk
+//			rts
