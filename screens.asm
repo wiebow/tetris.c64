@@ -99,43 +99,6 @@ RestorePlayArea:
 !skip:
 			rts
 
-// ----------------------------------------------
-
-PrintPaused:
-			clc 					// clear carry bit to set cursor
-			ldx #5 					// y position
-			stx pauseYpos 			// save it
-			ldy #12 				// column 12
-			jsr plot 				// place cursor
-			ldx #$00 				// reset text index
-!loop:
-			lda pauseText,x
-			beq !skip+ 				// next line!
-			jsr chrout 				// print char
-			inx 					// do next char
-			jmp !loop-
-!skip:
-			inx 					// skip the 0
-			txa 					// save current text index..
-			pha 					// to stack
-
-			lda pauseYpos 			// get current y position
-			adc #2
-			cmp #15 				// was this the last line?
-			bne !skip+ 				// no. continue
-			pla 					// restore stack before quit
-			rts
-!skip:
-			sta pauseYpos 			// save it
-			tax 					// send to x register
-			clc
-			ldy #12 				// column 12
-			jsr plot 				// place cursor
-			pla  					// restore text index
-			tax
-			jmp !loop-
-
-
 // ------------------------------------------------
 
 // this routine will copy data to another memory location
@@ -207,21 +170,6 @@ dataDestinationLo:
 
 
 // -----------------------------------------------
-
-pauseText:
-		.text "   HIT    "
-		.byte 0
-		.text "   'P'    "
-		.byte 0
-		.text "    TO    "
-		.byte 0
-		.text " CONTINUE "
-		.byte 0
-		.text "   GAME   "
-		.byte 0
-
-pauseYpos:
-		.byte 0
 
 playAreaErase:
 		.byte 0

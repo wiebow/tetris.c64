@@ -122,19 +122,12 @@ PrintGameOver:
 			sta dataSourceLo
 			lda #>gameoverText
 			sta dataSourceHi
-
-			// set data dimensions
-
 			lda #10
 			sta dataWidth
 			lda #20
 			sta dataHeight
-
-			// set start of area to print to
-
 			lda #04
 			sta dataDestinationHi
 			lda #12
 			sta dataDestinationLo
-
 			jmp WriteScreenData

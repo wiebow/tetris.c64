@@ -122,6 +122,7 @@ pauseFlag:
 			.import source "play.asm"
 			.import source "gameover.asm"
 			.import source "attract.asm"
+			.import source "levelselect.asm"
 
 			// import game data files
 
@@ -137,6 +138,8 @@ playscreen:
 			.import binary "tetris_playscreen.raw"
 gameoverText:
 			.import binary "tetris_gameover.raw"
+pauseText:
+			.import binary "tetris_paused.raw"
 titleScreenData:
 			.import binary "tetris_titlescreen.raw"
 keysScreenData:
