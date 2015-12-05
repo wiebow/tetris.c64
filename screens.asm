@@ -12,7 +12,7 @@
 // subroutine to clear the screen and color ram
 // also detroys sprite pointers.
 ClearScreen:
-			lda #12 			// light grey
+			lda #11 			// dark grey
 			sta $d020 			// set border color
 			sta $d021 			// set screen color
 			ldx #$00 			// reset offset register
@@ -22,13 +22,17 @@ ClearScreen:
 			sta $0500,x
 			sta $0600,x
 			sta $0700,x
-			lda #00 			// black
+			lda #13				// light green (screen color code)
 			sta $d800,x 		// store in color ram
 			sta $d900,x
 			sta $da00,x
 			sta $db00,x
 			inx 				// increment counter
 			bne !loop- 			// continue?
+
+	        lda #153 			// print everything in light green ...
+	        jsr $ffd2 			// from now on (ascii code)
+
 			rts
 
 // ---------------------------------------------

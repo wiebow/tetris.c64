@@ -1,10 +1,9 @@
 
 // play mode
 
-
 .const linesPerLevel = 10		// level advance threshold
 .const delayChange = 4 			// game goes this much faster each level
-
+.const DEFAULT_DROP_DELAY = 70
 
 // --------------------------------------------
 
@@ -13,16 +12,24 @@
 
 StartPlayMode:
 
-// -- temp!!
-			lda #$00 				// temp!!!
-			sta currentLevel 		// reset the player level
+			// reset drop delay
 
-			lda #70 				// set the fall delay timer. this is for level 0
-			sta fallDelay 			// each level, this is decreased with 2.
-			sta fallDelayTimer 		// current timer for next block
+			lda #DEFAULT_DROP_DELAY
+			sta fallDelay
+			sta fallDelayTimer
 
-// --
+			// add the levels
+			// currentLevel has been set by levelselect.asm
+
+			ldx currentLevel
+			beq !skip+
+!loop:
+			jsr AddLevel
+			dex
+			bne !loop-
+!skip:
 			jsr PrintPlayScreen
+			jsr PrintLevel
 
 	        // set up player stats
 
@@ -148,8 +155,6 @@ AddLevel:
 			sta gameLevel+1
 			cld 					// clear decimal mode
 
-			jsr PrintLevel 			// print it
-
 			// reset the 'lines made this level' counter
 
 			lda levelLinesCounter
@@ -204,6 +209,7 @@ exitflash:
 			bcc !skip+ 				// no: If the C flag is 0, then A (unsigned) < NUM (unsigned)
 									// and BCC will branch
 			jsr AddLevel 			// go up 1 level
+			jsr PrintLevel 			// print it
 !skip:
 			// add a new block to play with
 

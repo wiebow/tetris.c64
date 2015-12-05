@@ -43,9 +43,6 @@ Tetris for 6502. (c) WdW 2015
 	        jsr SetupRandom 		// set the rnd seed
 	        jsr ClearScreen 		// clear the screen and set colors
 
-	        lda #153 				// print everything in light green ...
-	        jsr $ffd2 				// from now on
-
 			// initial setup done
 			//select mode and call mode entry routine.
 
@@ -58,7 +55,7 @@ Tetris for 6502. (c) WdW 2015
 loopstart:
 
 .if (DEBUG) {
-	lda #12
+	lda #11
 	sta $d020
 	sta $d021
 }
@@ -82,7 +79,7 @@ loopstart:
 !skip:
 			cmp #MODE_SELECTLEVEL
 			bne !skip+
-//			jsr UpdateSelectLevelMode
+			jsr UpdateLevelSelectMode
 			jmp loopend
 !skip:
 			cmp #MODE_PLAY
@@ -149,8 +146,6 @@ creditsScreenData:
 selectScreenData:
 			.import binary "tetris_select_and_high.raw"
 
-			// import the character set
+.pc = $3800 "character set"
 
-.pc = $3800 "character data"
-
-			.import binary "tetris_chars.raw"
+			.import binary "tetris_chars2.raw"

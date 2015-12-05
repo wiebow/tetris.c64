@@ -12,17 +12,32 @@
 .const DOWN = 1 			// ENTER
 .const PAUSE = 41 			// P
 .const RESET = 4	 		// F1
-.const CHANGEBACKGROUND = 0 // F3
-.const CHANGECOLOUR = 0 	// F5
-.const NOKEY = 64 			// hehe
+.const CHANGEBACKGROUND = 5 // F3
+.const CHANGECOLOUR = 6 	// F5
+.const NOKEY = 64
 .const NOINPUT = 253		// no input detected
 
 // this byte holds the result of the input query
 // game modes can check this byte and get the
-// registered input
+// registered input after calling GetInput
 
 inputResult:
 			.byte 0
+
+
+// ------------------------------------------------------
+
+// this routine will scan keyboard first and then the joystick
+// but only if there was no input from the keyboard
+
+GetInput:
+			jsr GetKeyInput
+			lda inputResult
+			cmp #NOINPUT
+			bne !skip+
+			jsr GetJoyInput
+!skip:
+			rts
 
 // ------------------------------------------------------
 

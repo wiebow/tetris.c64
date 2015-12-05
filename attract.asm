@@ -123,16 +123,7 @@ triggered:
 // -----------------------------------------
 
 EndAttractMode:
-			// lda #MODE_SELECTLEVEL
-			// sta gameMode
-			// jsr StartSelectLevelMode
-			// rts
-
-
-
-			lda #MODE_PLAY
+			lda #MODE_SELECTLEVEL
 			sta gameMode
-			jsr StartPlayMode
+			jsr StartLevelSelectMode
 			rts
-
-
