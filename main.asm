@@ -1,7 +1,7 @@
 
 /*
 ----------------------------------
-Tetris for 6502. (c) WdW 2015
+Tetris for 6502. (c) WdW 2015/2016
 ----------------------------------
 */
 
@@ -16,13 +16,21 @@ Tetris for 6502. (c) WdW 2015
 .const MODE_GAMEOVER = 4
 .const MODE_ENTERNAME = 5
 
-.const DEBUG = true
+.const DEBUG = false
 
+
+// get music data
+.var music = LoadSid("audio.sid")
+
+
+:BasicUpstart2(start)
 
 // ------------------------------------------------
 
 .pc = $c000 "code"
 
+
+start:
 			// initial setup
 
 			// set the used video bank to bank 0 ($0000-$3fff)
@@ -75,7 +83,7 @@ loopstart:
 			cmp #MODE_ATTRACT
 			bne !skip+
 			jsr UpdateAttractMode
-			jmp loopstart
+			jmp loopend
 !skip:
 			cmp #MODE_SELECTLEVEL
 			bne !skip+
@@ -94,8 +102,11 @@ loopstart:
 !skip:
 			cmp #MODE_ENTERNAME
 			bne loopend
-loopend:
 
+			// stuff to add here
+
+loopend:
+			jsr music.play
 			jmp loopstart
 
 // ------------------------------------------
@@ -109,25 +120,24 @@ pauseFlag:
 
 			// import game source files
 
+			.import source "sound.asm"
 			.import source "blocks.asm"
 			.import source "input.asm"
 			.import source "screens.asm"
 			.import source "lines.asm"
 			.import source "scores.asm"
 			.import source "random.asm"
-
 			.import source "play.asm"
 			.import source "gameover.asm"
 			.import source "attract.asm"
 			.import source "levelselect.asm"
 
-			// import game data files
-
-			// import the game screen data files
-			// it is pure data, so no need to skip meta data
-			// from char pad while importing
 
 // ------------------------------------------
+// import game data files
+// import the game screen data files
+// it is pure data, so no need to skip meta data
+// from char pad while importing
 
 .pc = $4000 "screen data"
 
@@ -149,3 +159,10 @@ selectScreenData:
 .pc = $3800 "character set"
 
 			.import binary "tetris_chars2.raw"
+
+// fill memory with music data
+// music.location = $1000
+
+.pc = music.location "Music"
+
+			.fill music.size, music.getData(i)

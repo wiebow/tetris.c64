@@ -12,6 +12,9 @@
 
 StartPlayMode:
 
+			lda #SND_TETRIS
+			jsr playsound
+
 			// reset drop delay
 
 			lda #DEFAULT_DROP_DELAY
@@ -57,58 +60,81 @@ StartPlayMode:
 UpdatePlayMode:
 			jsr UpdateRandom
 
-			jsr GetKeyInput
+//			jsr GetKeyInput
+			jsr GetInput
 			ldx inputResult
+			cpx #NOINPUT
+			beq doLogic 			// no input, so continue
 			cpx #PAUSE 				// pressed p?
 			bne !skip+
 			jmp TogglePause 		// toggle and abort rest of update
 !skip:
 			cpx #RESET
 			bne !skip+
-			// jmp ResetGame
+			// to do : jmp ResetGame
 !skip:
 			lda pauseFlag 			// are we in pause mode?
 			beq !skip+ 				// no, so continue
-			rts 					// yes, abort rest of update
+			rts 					// yes paused, abort rest of update
 
 !skip:
 			// check if we are flashing made lines
 
 			lda linesMade 			// did we make lines in previous update?
-			beq doInput				// no, continue
+			beq doControls			// no, continue
 			jmp UpdateLineFlash 	// yes, do that, and abort rest of update
 
 doInput:
-			cpx #NOINPUT
-			bne doControls		 	// if there was key input, process it.
-			jsr GetJoyInput 		// if not, check joystick input
-			ldx inputResult
-			cpx #NOINPUT 			// if there was no input ...
-			beq doLogic 			// perform game logic and skip control process
+			// cpx #NOINPUT
+			// bne doControls		 	// if there was input, process it.
+			// jsr GetJoyInput 		// if not, check joystick input
+
+			// ldx inputResult
+			// cpx #NOINPUT 			// if there was no input ...
+			// beq doLogic 			// perform game logic and skip control process
 doControls:
 			cpx #LEFT
 			bne !skipControl+
 			jsr BlockLeft
+
+			lda #SND_MOVE_BLOCK
+			jsr playsound
+
 			jmp doLogic
 !skipControl:
   			cpx #RIGHT
   			bne !skipControl+
   			jsr BlockRight
+
+			lda #SND_MOVE_BLOCK
+			jsr playsound
+
   			jmp doLogic
 !skipControl:
   			cpx #TURNCOUNTER
   			bne !skipControl+
   			jsr BlockRotateCCW
+
+			lda #SND_ROTATE_BLOCK
+			jsr playsound
+
   			jmp doLogic
 !skipControl:
  			cpx #TURNCLOCK
  			bne !skipControl+
  			jsr BlockRotateCW
+
+			lda #SND_ROTATE_BLOCK
+			jsr playsound
+
  			jmp doLogic
 !skipControl:
 			cpx #DOWN
 			bne doLogic
 			jsr BlockDown
+
+			// lda #SND_MOVE_BLOCK
+			// jsr playsound
 
 doLogic:
 			jsr DropBlock 			// move play block down if delay has passed
@@ -116,12 +142,17 @@ doLogic:
 			beq !skip+
 			rts 					// block still in play, no line check needed
 !skip:
+			lda #SND_DROP_BLOCK
+			jsr playsound
+
 			jsr CheckLines 			// block has dropped, so check
 			lda linesMade 			// are lines made?
 			beq !skip+ 				// no, place new block
+
 			rts 					// yes. do not create a new block now
 									// UpdateLineFlash will do that later on
 !skip:
+
 			jsr NewBlock 			// Acc=0 means the new block fits
 			beq !skip+ 				// fits. so exit
 			jmp EndPlayMode 		// no fit!
@@ -199,6 +230,14 @@ exitflash:
 			adc linesMade 			// add the made lines
 			sta levelLinesCounter
 
+			lda #SND_LINE
+			ldx linesMade 			// determine sound to play
+			cpx #4
+			bne !skip+
+			lda #SND_TETRIS
+!skip:
+			jsr playsound 			// play it
+
 			lda #$00				// reset the lines made
 			sta linesMade
 
@@ -228,6 +267,10 @@ TogglePause:
 
 			cmp #$01 				// pause mode?
 			beq !skip+ 				// yes
+
+			lda #SND_PAUSE_OFF
+			jsr playsound
+
 			jmp RestorePlayArea 	// no, restore the screen
 !skip:
 			// game is paused. so clear the screen
@@ -235,6 +278,10 @@ TogglePause:
 			lda #$01 				// set the erase flag
 			sta playAreaErase 		// so area gets cleared as well
 			jsr SavePlayArea 		// save and clear the play area
+
+			lda #SND_PAUSE_ON
+			jsr playsound
+
 			jmp PrintPaused
 
 // --------------------------------------------------

@@ -16,6 +16,12 @@ attractDelay:
 // -----------------------------------------
 
 StartAttractMode:
+
+			// select music
+
+			lda #SND_MUSIC_TITLE
+			jsr playsound
+
 			lda #ATTRACT_DELAY
 			sta attractDelay
 			lda #STEP_TITLE
@@ -46,6 +52,7 @@ StartAttractMode:
 			sta dataSourceHi
 			jmp WriteScreenData
 
+
 // -----------------------------------------
 
 UpdateAttractMode:
@@ -65,6 +72,7 @@ UpdateAttractMode:
 			rts
 !skip:
 			jmp EndAttractMode		// start the game
+
 triggered:
 			lda #ATTRACT_DELAY 		// reset the delay
 			sta attractDelay
@@ -76,7 +84,7 @@ triggered:
 			lda #STEP_TITLE    	 // yes. reset cycle
 			sta attractStep
 !skip:
-			// set data dimensions
+			// set screen data dimensions
 
 			lda #21
 			sta dataWidth
