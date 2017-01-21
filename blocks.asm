@@ -374,10 +374,10 @@ BlockDown:
  			// moving the block down gives points
 
 			lda #1
- 			sta addition
+ 			sta addition+2
  			lda #0
  			sta addition+1
- 			sta addition+2
+ 			sta addition
  			jsr AddScore
  			jsr PrintScore
 			rts
