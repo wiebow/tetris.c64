@@ -73,11 +73,11 @@ inputDone:
 			pla
 			tax
 			clc
-			jsr plot
+			jsr PLOT
 
 			lda previousLevel
 			adc #$30  				// add #$30 to it to get a screencode
-			jsr chrout
+			jsr PRINT
 
 			// make sure to show change asap
 
@@ -105,7 +105,7 @@ doLevelFlash:
 			pla
 			tax
 			clc
-			jsr plot
+			jsr PLOT
 
 			// flip the display flag
 
@@ -116,10 +116,10 @@ doLevelFlash:
 			beq space 				// flag clear? then print space
 			lda currentLevel 		// get the level value
 			adc #$30 				// add #$30 to it to get a screencode
-			jmp chrout 				// print and exit
+			jmp PRINT 				// print and exit
 space:
 			lda #$20
-			jmp chrout 				// and exit
+			jmp PRINT 				// and exit
 
 // ----------------------------------
 
