@@ -1,6 +1,8 @@
 
 // C64 kernal jump table values
 
+#importonce
+
 .label SETNAM	= $ffbd
 .label OPEN		= $ffc0
 .label CLOSE	= $ffc3

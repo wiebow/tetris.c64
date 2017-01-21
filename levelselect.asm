@@ -4,29 +4,15 @@
 // ----------------------------------
 
 StartLevelSelectMode:
+	lda #$00
+	sta currentLevel
+	sta previousLevel
+	sta levelDisplayFlag
+	lda #1
+	sta levelFlashDelay 		// and delay counter
 
-			lda #$00
-			sta currentLevel
-			sta previousLevel
-			sta levelDisplayFlag
-			lda #1
-			sta levelFlashDelay 		// and delay counter
-
-			// print the screen
-
-			lda #<selectScreenData
-			sta dataSourceLo
-			lda #>selectScreenData
-			sta dataSourceHi
-			lda #21
-			sta dataWidth
-			lda #21
-			sta dataHeight
-			lda #04
-			sta dataDestinationHi
-			lda #10
-			sta dataDestinationLo
-			jmp WriteScreenData
+	ldy #SCREEN_LEVELSELECT
+	jmp PRINT_SCREEN
 
 // --------------------------------------------------
 
@@ -132,16 +118,15 @@ EndLevelSelectMode:
 // ----------------------------------
 
 // x/y positions of level numbers on screen
-
-//                0  1  2  3  4  5  6  7  8  9
+//        0  1  2  3  4  5  6  7  8  9
 levelX:
-			.byte 16,18,20,22,24,16,18,20,22,24
+	.byte 16,18,20,22,24,16,18,20,22,24
 levelY:
-			.byte 07,07,07,07,07,09,09,09,09,09
+	.byte 07,07,07,07,07,09,09,09,09,09
 
 levelFlashDelay:
-			.byte 0 				// counter
+	.byte 0 				// counter
 levelDisplayFlag:
-			.byte 0					// render number or space
+	.byte 0					// render number or space
 previousLevel:
-			.byte 0
+	.byte 0

@@ -18,7 +18,7 @@ Tetris for 6502. (c) WdW 2015/16/17
 .const MODE_ENTERNAME = 5
 
 // display debug info or not
-.const DEBUG = false
+.const DEBUG = true
 
 :BasicUpstart2(START)
 
@@ -75,8 +75,7 @@ loopstart:
 	sta $d020
 	sta $d021
 }
-			// determine game mode and update accordingly
-
+	// determine game mode and update accordingly
 	lda gameMode
 	cmp #MODE_ATTRACT
 	bne !skip+
@@ -109,13 +108,6 @@ loopend:
 
 // ------------------------------------------
 
-gameMode:
-			.byte 0
-pauseFlag:
-			.byte 0 				// value is 1 when game is paused
-
-// ------------------------------------------
-
 // import game source files
 
 .import source "sound.asm"
@@ -132,6 +124,12 @@ pauseFlag:
 
 .import source "hi-scores.asm"
 
+// ------------------------------------------
+
+gameMode:
+	.byte 0
+pauseFlag:
+	.byte 0 				// value is 1 when game is paused
 
 // ------------------------------------------
 // import the game screen data files

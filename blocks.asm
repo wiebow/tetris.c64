@@ -2,9 +2,8 @@
 
 // code concerning blocks
 
-
-			.const screenPointer = $fb		// zero page pointer to a screen memory position
-			.const screenPointer2 = $fd 	// 2nd pointer to move data
+.const screenPointer = $fb		// zero page pointer to a screen memory position
+.const screenPointer2 = $fd 	// 2nd pointer to move data
 
 
 // sets screen memory pointer to x and y column

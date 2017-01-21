@@ -2,9 +2,9 @@
 .const keyPressed = $cb 	// scnkey puts code of held key here.
 .const INPUTDELAY = 15	 	// update delay between input checks
 
+
 // keycodes to check for in inputResult values
 // valid controls are also used for joystick results.
-
 .const LEFT = 47 			// , <
 .const RIGHT = 44	 		// . >
 .const TURNCOUNTER = 10		// A
@@ -17,27 +17,18 @@
 .const NOKEY = 64
 .const NOINPUT = 253		// no input detected
 
-// this byte holds the result of the input query
-// game modes can check this byte and get the
-// registered input after calling GetInput
-
-inputResult:
-			.byte 0
-
-
 // ------------------------------------------------------
 
 // this routine will scan keyboard first and then the joystick
 // but only if there was no input from the keyboard
-
 GetInput:
-			jsr GetKeyInput
-			lda inputResult
-			cmp #NOINPUT
-			bne !skip+
-			jsr GetJoyInput
+	jsr GetKeyInput
+	lda inputResult
+	cmp #NOINPUT
+	bne !skip+
+	jsr GetJoyInput
 !skip:
-			rts
+	rts
 
 // ------------------------------------------------------
 
@@ -139,6 +130,13 @@ joyDelay:
 									// stored in inputResult.
 
 // ------------------------------------------------
+
+// this byte holds the result of the input query
+// game modes can check this byte and get the
+// registered input after calling GetInput
+inputResult:
+	.byte 0
+
 
 inputDelayCounter:
 			.byte INPUTDELAY		// if this reaches 0, the player input is read

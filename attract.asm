@@ -1,43 +1,16 @@
 
-// attrack mode steps
-.const STEP_TITLE = 0
-.const STEP_CREDITS = 1
-.const STEP_CONTROLS = 2
-.const ATTRACT_DELAY = 50 * 5
+.const ATTRACT_DELAY = 254
+
+// -----------------------------------------
 
 StartAttractMode:
-	// select music
 	lda #SND_MUSIC_TITLE
 	jsr playsound
-
 	lda #ATTRACT_DELAY
 	sta attractDelay
-	lda #STEP_TITLE
-	sta attractStep
-
-	// set the screen size
-	// this is the same for all steps
-	// so doing it once is enough
-
-	// set data dimensions
-	lda #21
-	sta dataWidth
-	lda #20
-	sta dataHeight
-
-	// set start of area to print to
-	lda #04
-	sta dataDestinationHi
-	lda #10
-	sta dataDestinationLo
-
-	// print the first screen
-	lda #<titleScreenData
-	sta dataSourceLo
-	lda #>titleScreenData
-	sta dataSourceHi
-	jmp WriteScreenData
-
+	ldy #SCREEN_TITLE
+	sty attractStep
+	jmp PRINT_SCREEN
 
 // -----------------------------------------
 
@@ -52,8 +25,8 @@ UpdateAttractMode:
 	beq !skip+ 				// yes
 	jsr GetJoyInput
 	lda inputResult
-	cmp #TURNCLOCK 				// joy button pressed?
-	beq !skip+ 					// yes
+	cmp #TURNCLOCK 			// joy button pressed?
+	beq !skip+ 				// yes
 	rts
 !skip:
 	jmp EndAttractMode		// start the game
@@ -66,52 +39,12 @@ triggered:
 	lda attractStep
 	cmp #3 					// have we done 3 screens?
 	bne !skip+				// no. continue cycle
-	lda #STEP_TITLE    	 // yes. reset cycle
+	lda #SCREEN_TITLE 		// yes. reset cycle
 	sta attractStep
 !skip:
-	// set screen data dimensions
 
-	lda #21
-	sta dataWidth
-	lda #21
-	sta dataHeight
-
-	// reset the screen pointer
-
-	lda #04
-	sta dataDestinationHi
-	lda #10
-	sta dataDestinationLo
-
-	// set start of data
-	// dependent on attract step
-
-	lda attractStep
-	cmp #STEP_TITLE
-	bne !nextstep+
-	lda #<titleScreenData
-	sta dataSourceLo
-	lda #>titleScreenData
-	sta dataSourceHi
-	jmp WriteScreenData
-!nextstep:
-	cmp #STEP_CREDITS
-	bne !nextstep+
-	lda #<creditsScreenData
-	sta dataSourceLo
-	lda #>creditsScreenData
-	sta dataSourceHi
-	jmp WriteScreenData
-!nextstep:
-	cmp #STEP_CONTROLS
-	bne !nextstep+
-	lda #<keysScreenData
-	sta dataSourceLo
-	lda #>keysScreenData
-	sta dataSourceHi
-	jmp WriteScreenData
-!nextstep:
-	rts
+	ldy attractStep
+	jmp PRINT_SCREEN
 
 // -----------------------------------------
 
