@@ -1,6 +1,6 @@
 
-
 // code concerning made lines
+// requires kernal.asm
 
 			.const flashDelay = 10 				// delay in frames.
 			.const flashTime = flashDelay * 6 	// how long to flash. 3 times.
@@ -32,7 +32,7 @@ PrintTotalLinesMade:
 			clc 					// position cursor
 			ldx #12
 			ldy #26
-			jsr plot
+			jsr PLOT
 
 			// do 1st byte.
 			// only do the first 4 bits of this byte
@@ -41,7 +41,7 @@ PrintTotalLinesMade:
 			and #%00001111 			// get rid of leftmost bits
 			clc
 			adc #$30 				// create a screen code
-			jsr chrout 				// print it
+			jsr PRINT 				// print it
 
 			// do 2nd byte
 
@@ -53,12 +53,12 @@ PrintTotalLinesMade:
 			lsr
 			clc
 			adc #$30 				// add #$30 to it to get a screencode
-			jsr chrout 				// print it
+			jsr PRINT 				// print it
 			pla 					// restore value
 			and #%00001111 			// get rid of leftmost bits
 			clc
 			adc #$30 				// create a screen code
-			jsr chrout 				// print it
+			jsr PRINT 				// print it
 			rts
 
 
