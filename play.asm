@@ -12,6 +12,9 @@
 
 StartPlayMode:
 
+			lda #0
+			sta sounddelayCounter
+
 			lda #SND_TETRIS
 			jsr playsound
 
@@ -60,7 +63,15 @@ StartPlayMode:
 UpdatePlayMode:
 			jsr UpdateRandom
 
-//			jsr GetKeyInput
+			lda sounddelayCounter
+			beq !skip+
+			dec sounddelayCounter
+!skip:
+			// check if we are flashing made lines
+			lda linesMade
+			beq !skip+
+			jmp UpdateLineFlash
+!skip:
 			jsr GetInput
 			ldx inputResult
 			cpx #NOINPUT
@@ -74,15 +85,8 @@ UpdatePlayMode:
 			// to do : jmp ResetGame
 !skip:
 			lda pauseFlag 			// are we in pause mode?
-			beq !skip+ 				// no, so continue
+			beq doInput 			// no, so continue
 			rts 					// yes paused, abort rest of update
-
-!skip:
-			// check if we are flashing made lines
-
-			lda linesMade 			// did we make lines in previous update?
-			beq doControls			// no, continue
-			jmp UpdateLineFlash 	// yes, do that, and abort rest of update
 
 doInput:
 			// cpx #NOINPUT
@@ -148,11 +152,9 @@ doLogic:
 			jsr CheckLines 			// block has dropped, so check
 			lda linesMade 			// are lines made?
 			beq !skip+ 				// no, place new block
-
 			rts 					// yes. do not create a new block now
 									// UpdateLineFlash will do that later on
 !skip:
-
 			jsr NewBlock 			// Acc=0 means the new block fits
 			beq !skip+ 				// fits. so exit
 			jmp EndPlayMode 		// no fit!
@@ -211,6 +213,7 @@ AddLevel:
 UpdateLineFlash:
 			jsr FlashLines
 			lda totalFlashDelay 	// flashed long enough?
+			// sta $0400
 			beq exitflash			// yes. remove the lines and update score
 			rts 					// not yet. do this again on next update
 
@@ -220,7 +223,7 @@ exitflash:
 			jsr AddLinesTotal 		// add the made lines to total
 			jsr PrintTotalLinesMade // and print these
 
-			jsr AddLineScore		// add score made by lines
+			jsr AddLineValue		// add score made by lines
 			jsr PrintScore 			// show the score
 
 			jsr RemoveLines 		// then remove lines from screen
