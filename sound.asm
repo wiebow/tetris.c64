@@ -1,6 +1,5 @@
 
 // sound main file.
-// sets up irq and provides a way to play sounds
 
 // music definitions in sound file
 
@@ -15,43 +14,28 @@
 .const SND_MUSIC_TITLE = 9
 .const SND_MUSIC_GAMEOVER = 8
 
+
 // set accumulator before calling this
-
+// it will not play when the sound delay counter is not 0
 playsound:
-        ldx #0
-        ldy #0
+		// dont play if counter is not 0
+		ldx sounddelayCounter
+		bne !skip+
+		tax
+		lda sounddelay,x
+		sta sounddelayCounter
+		txa
+play:
+		ldx #0
+		ldy #0
         jsr music.init
+!skip:
+		rts
 
-// setup_music:
-//         sei
-//         lda #<irq1
-//         sta $0314
-//         lda #>irq1
-//         sta $0315
-//         asl $d019
-//         lda #$7b
-//         sta $dc0d
-//         lda #$81
-//         sta $d01a
-//         lda #$1b
-//         sta $d011
-//         lda #$00
-//         sta $d012
-//         cli
-//         rts
+sounddelayCounter:
+	.byte 0
 
-//---------------------------------------------------------
-irq1:
-//         asl $d019
-// //        inc $d020
-//         jsr music.play
-// //        dec $d020
-//         jmp $ea31
-//         pla
-//         tay
-//         pla
-//         tax
-//         pla
-//         rti
-
+sounddelay:
+//		  0  1  2  3  4  5  6  7  8 9
+	.byte 10,10,10,35,35,25,25,10,0,0
 
