@@ -9,163 +9,154 @@
 
 // starts a new game
 // level and drop delay have already been set!
-
 StartPlayMode:
+	lda #0
+	sta sounddelayCounter
+	lda #SND_TETRIS
+	jsr playsound
 
-			lda #0
-			sta sounddelayCounter
+	// reset drop delay
+	lda #DEFAULT_DROP_DELAY
+	sta fallDelay
+	sta fallDelayTimer
 
-			lda #SND_TETRIS
-			jsr playsound
-
-			// reset drop delay
-
-			lda #DEFAULT_DROP_DELAY
-			sta fallDelay
-			sta fallDelayTimer
-
-			// add the levels
-			// currentLevel has been set by levelselect.asm
-
-			ldx currentLevel
-			beq !skip+
+	// add the levels
+	// currentLevel has been set by levelselect.asm
+	// AddLevel will modify the drop delay
+	ldx currentLevel
+	beq !skip+
 !loop:
-			jsr AddLevel
-			dex
-			bne !loop-
+	jsr AddLevel
+	dex
+	bne !loop-
 !skip:
-			jsr PrintPlayScreen
-			jsr PrintLevel
+	ldy #SCREEN_PLAY
+	jsr PRINT_SCREEN
+	jsr PrintLevel
 
-	        // set up player stats
+    // set up player stats
+    jsr ResetScore 			// reset player score...
+    jsr ResetLinesMade		// and total lines made
 
-	        jsr ResetScore 			// reset player score...
-	        jsr ResetLinesMade		// and total lines made
+    // reset play stats
+    lda #$00 				// reset the lines counter...
+    sta levelLinesCounter 	// which is used to go up levels.
+    sta linesMade 			// and no lines made
 
-	        // reset play stats
-
-	        lda #$00 				// reset the lines counter...
-	        sta levelLinesCounter 	// which is used to go up levels.
-	        sta linesMade 			// and no lines made
-
-			// set the next block value
-			// NewBlock will use this value for a new block
-			// and set the next block value again for the next call
-
-			jsr GetRandom
-			sta nextBlockID 		// this will be printed as the next block
-									// to fall
-	        jsr NewBlock 			// get a new player block
-			rts
+	// set the next block value
+	// NewBlock will use this value for a new block
+	// and set the nextBlockID again for the next call
+	jsr GetRandom
+	sta nextBlockID 		// this will be printed as the next block
+							// to fall
+    jsr NewBlock 			// get a new player block
+	rts
 
 // ----------------------------------------------
 
 UpdatePlayMode:
-			jsr UpdateRandom
+	jsr UpdateRandom
 
-			lda sounddelayCounter
-			beq !skip+
-			dec sounddelayCounter
+	lda sounddelayCounter
+	beq !skip+
+	dec sounddelayCounter
 !skip:
-			// check if we are flashing made lines
-			lda linesMade
-			beq !skip+
-			jmp UpdateLineFlash
+	// check to see if we are in pause mode
+	lda pauseFlag
+	beq !skip+
+	jsr UpdatePause
+	rts
 !skip:
-			jsr GetInput
-			ldx inputResult
-			cpx #NOINPUT
-			beq doLogic 			// no input, so continue
-			cpx #PAUSE 				// pressed p?
-			bne !skip+
-			jmp TogglePause 		// toggle and abort rest of update
+	// check if we are flashing made lines
+	lda linesMade
+	beq !skip+
+	jsr UpdateLineFlash
+	rts
 !skip:
-			cpx #RESET
-			bne !skip+
-			// to do : jmp ResetGame
+	// check input and react
+	// we only allow one action per update.
+	jsr GetInput
+	ldx inputResult
+	cpx #NOINPUT
+	bne !nextControl+
+	// no input, so forward game
+	jmp DoLogic
+
+!nextControl:
+	cpx #RESET
+	bne !nextControl+
+
+	// to do : jmp ResetGame
+
+!nextControl:
+	cpx #PAUSE
+	bne !nextControl+
+	jmp SetPause
+
+!nextControl:
+	cpx #LEFT
+	bne !nextControl+
+	jsr BlockLeft
+	lda #SND_MOVE_BLOCK
+	jsr playsound
+	rts
+!nextControl:
+	cpx #RIGHT
+	bne !nextControl+
+	jsr BlockRight
+	lda #SND_MOVE_BLOCK
+	jsr playsound
+	rts
+!nextControl:
+	cpx #TURNCOUNTER
+	bne !nextControl+
+	jsr BlockRotateCCW
+	lda #SND_ROTATE_BLOCK
+	jsr playsound
+	rts
+!nextControl:
+	cpx #TURNCLOCK
+	bne !nextControl+
+	jsr BlockRotateCW
+	lda #SND_ROTATE_BLOCK
+	jsr playsound
+	rts
+!nextControl:
+	cpx #DOWN
+	bne DoLogic
+	jsr BlockDown
+	lda #SND_MOVE_BLOCK
+	jsr playsound
+	rts
+
+DoLogic:
+	// ---- execute game logic
+
+	jsr DropBlock 			// move play block down if delay has passed
+	cmp #$02 				// Acc=2 means that a new block is needed
+	beq !skip+
+	rts 					// block still in play, no line check needed
 !skip:
-			lda pauseFlag 			// are we in pause mode?
-			beq doInput 			// no, so continue
-			rts 					// yes paused, abort rest of update
+	lda #SND_DROP_BLOCK
+	jsr playsound
 
-doInput:
-			// cpx #NOINPUT
-			// bne doControls		 	// if there was input, process it.
-			// jsr GetJoyInput 		// if not, check joystick input
-
-			// ldx inputResult
-			// cpx #NOINPUT 			// if there was no input ...
-			// beq doLogic 			// perform game logic and skip control process
-doControls:
-			cpx #LEFT
-			bne !skipControl+
-			jsr BlockLeft
-
-			lda #SND_MOVE_BLOCK
-			jsr playsound
-
-			jmp doLogic
-!skipControl:
-  			cpx #RIGHT
-  			bne !skipControl+
-  			jsr BlockRight
-
-			lda #SND_MOVE_BLOCK
-			jsr playsound
-
-  			jmp doLogic
-!skipControl:
-  			cpx #TURNCOUNTER
-  			bne !skipControl+
-  			jsr BlockRotateCCW
-
-			lda #SND_ROTATE_BLOCK
-			jsr playsound
-
-  			jmp doLogic
-!skipControl:
- 			cpx #TURNCLOCK
- 			bne !skipControl+
- 			jsr BlockRotateCW
-
-			lda #SND_ROTATE_BLOCK
-			jsr playsound
-
- 			jmp doLogic
-!skipControl:
-			cpx #DOWN
-			bne doLogic
-			jsr BlockDown
-
-			// lda #SND_MOVE_BLOCK
-			// jsr playsound
-
-doLogic:
-			jsr DropBlock 			// move play block down if delay has passed
-			cmp #$02 				// Acc=2 means that a new block is needed
-			beq !skip+
-			rts 					// block still in play, no line check needed
+	jsr CheckLines 			// block has dropped, so check
+	lda linesMade 			// are lines made?
+	beq !skip+ 				// no, place new block
+	rts 					// yes. do not create a new block now
+							// UpdateLineFlash will do that later on
 !skip:
-			lda #SND_DROP_BLOCK
-			jsr playsound
-
-			jsr CheckLines 			// block has dropped, so check
-			lda linesMade 			// are lines made?
-			beq !skip+ 				// no, place new block
-			rts 					// yes. do not create a new block now
-									// UpdateLineFlash will do that later on
+	jsr NewBlock 			// Acc=0 means the new block fits
+	beq !skip+ 				// fits. so exit
+	jmp EndPlayMode 		// no fit!
 !skip:
-			jsr NewBlock 			// Acc=0 means the new block fits
-			beq !skip+ 				// fits. so exit
-			jmp EndPlayMode 		// no fit!
-!skip:
-			rts
+	rts
 
 EndPlayMode:
-			lda #MODE_GAMEOVER
-			sta gameMode
-			jsr StartGameOverMode
-			rts
+	lda #MODE_GAMEOVER
+	sta gameMode
+	jsr StartGameOverMode
+	rts
 
 // -------------------------------------------------
 
@@ -263,83 +254,53 @@ exitflash:
 
 // --------------------------------------------------
 
-TogglePause:
-			lda pauseFlag 			// get the current pause flag
-			eor #%00000001 			// flip between 0 and 1
-			sta pauseFlag 			// store it
+SetPause:
+	lda #1
+	sta pauseFlag
+	lda #0
+	sta sounddelayCounter
+	lda #SND_PAUSE_ON
+	jsr playsound
 
-			cmp #$01 				// pause mode?
-			beq !skip+ 				// yes
+	// save the well data
+	lda #1 					// set the erase flag
+	sta playAreaErase
+	jsr SavePlayArea
 
-			lda #SND_PAUSE_OFF
-			jsr playsound
+	// print the pause text
+	ldy #WELL_PAUSE
+	jsr PRINT_WELLDATA
+	rts
 
-			jmp RestorePlayArea 	// no, restore the screen
-!skip:
-			// game is paused. so clear the screen
+// ----------------------------------------------
 
-			lda #$01 				// set the erase flag
-			sta playAreaErase 		// so area gets cleared as well
-			jsr SavePlayArea 		// save and clear the play area
+UpdatePause:
+	jsr GetInput
+	lda inputResult
+	cmp #PAUSE
+	bne !exit+
+	lda #0
+	sta pauseFlag
+	sta sounddelayCounter
+	lda #SND_PAUSE_OFF
+	jsr playsound
+	jsr RestorePlayArea
+!exit:
+	rts
 
-			lda #SND_PAUSE_ON
-			jsr playsound
-
-			jmp PrintPaused
-
-// --------------------------------------------------
-
-
-PrintPlayScreen:
-
-			// set start of data
-
-			lda #<playscreen
-			sta dataSourceLo
-			lda #>playscreen
-			sta dataSourceHi
-
-			// set data dimensions
-
-			lda #21
-			sta dataWidth
-			lda #21
-			sta dataHeight
-
-			// set start of area to print to
-
-			lda #04
-			sta dataDestinationHi
-			lda #10
-			sta dataDestinationLo
-
-			jmp WriteScreenData
+// ----------------------------------------------
 
 // -----------------------------------------------------
 
-PrintPaused:
-			lda #<pauseText
-			sta dataSourceLo
-			lda #>pauseText
-			sta dataSourceHi
-			lda #10
-			sta dataWidth
-			lda #20
-			sta dataHeight
-			lda #04
-			sta dataDestinationHi
-			lda #12
-			sta dataDestinationLo
-			jmp WriteScreenData
-
-// -----------------------------------------------------
-
+// current player level
 currentLevel:
-			.byte 0 					// current player level
-
+	.byte 0
+// values for printing the current level. LSB first.
 gameLevel:
-			.byte 0,0 					// values for printing the current level. LSB first.
+	.byte 0,0
 
+// this byte holds lines made after last
+// level increase. threshold is declared on top of file.
 levelLinesCounter:
-			.byte 0 					// this byte holds lines made after last
-										// level increase. threshold is declared on top of file.
+	.byte 0
+
