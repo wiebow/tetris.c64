@@ -26,6 +26,22 @@ Tetris for 6502. (c) WdW 2015/16/17
 
 .pc = $c000 "maincode"
 
+// import game source files
+
+.import source "sound.asm"
+.import source "blocks.asm"
+.import source "input.asm"
+.import source "screens.asm"
+.import source "lines.asm"
+.import source "scores.asm"
+.import source "random.asm"
+.import source "play.asm"
+.import source "hi-scores.asm"
+.import source "entername.asm"
+.import source "gameover.asm"
+.import source "attract.asm"
+.import source "levelselect.asm"
+
 START:
 	// initial setup
 	// set the used video bank to bank 0 ($0000-$3fff)
@@ -78,51 +94,31 @@ loopstart:
 	// determine game mode and update accordingly
 	lda gameMode
 	cmp #MODE_ATTRACT
-	bne !skip+
+	bne !nextmode+
 	jsr UpdateAttractMode
 	jmp loopend
-!skip:
+!nextmode:
 	cmp #MODE_SELECTLEVEL
-	bne !skip+
+	bne !nextmode+
 	jsr UpdateLevelSelectMode
 	jmp loopend
-!skip:
+!nextmode:
 	cmp #MODE_PLAY
-	bne !skip+
+	bne !nextmode+
 	jsr UpdatePlayMode
 	jmp loopend
-!skip:
+!nextmode:
 	cmp #MODE_GAMEOVER
-	bne !skip+
+	bne !nextmode+
 	jsr UpdateGameOverMode
 	jmp loopend
-!skip:
+!nextmode:
 	cmp #MODE_ENTERNAME
 	bne loopend
-
-	// todo:
-
+	jsr UpdateEnterNameMode
 loopend:
 	jsr music.play
 	jmp loopstart
-
-// ------------------------------------------
-
-// import game source files
-
-.import source "sound.asm"
-.import source "blocks.asm"
-.import source "input.asm"
-.import source "screens.asm"
-.import source "lines.asm"
-.import source "scores.asm"
-.import source "random.asm"
-.import source "play.asm"
-.import source "gameover.asm"
-.import source "attract.asm"
-.import source "levelselect.asm"
-
-.import source "hi-scores.asm"
 
 // ------------------------------------------
 

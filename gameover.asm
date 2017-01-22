@@ -4,13 +4,12 @@
 // states of the game over mode
 .const STEP_FILLWELL = 0
 .const STEP_CLEARWELL = 1
-.const STEP_TEXT = 2
+.const STEP_GAMEOVERTEXT = 2
 
 // ------------------------------------------------
 
 StartGameOverMode:
-
-	// play game over sound
+	// play game over music
 	lda #0
 	sta sounddelayCounter
 	lda #SND_MUSIC_GAMEOVER
@@ -20,93 +19,89 @@ StartGameOverMode:
 	lda #STEP_FILLWELL
 	sta currentStep
 	// we will render this block
-	lda #88
+	lda #105
 	sta drawCharacter
 	// and we need to do 20 lines
-	lda #20
+	lda #19
 	sta linesLeft
-	// point to the bottom line
-	ldx #12
-	ldy #19
-	jsr SetScreenPointer
 	rts
 
 // ---------------------------------------------------
 
 UpdateGameOverMode:
 	lda currentStep 		// which step to ...
+
 	cmp #STEP_FILLWELL 		// perform?
 	bne !otherStep+
 
-	jsr FillLine
-	dec linesLeft			// all lines done?
-	beq !skip+ 				// yes. prepare next step
-	rts 					// no. continue on next update
+	jsr DrawLine
+	dec linesLeft
+	bmi !skip+
+	rts
 !skip:
-	// prepare next step
 	inc currentStep
 	lda #$20
 	sta drawCharacter
+	lda #19
 	sta linesLeft
-	ldx #12
-	ldy #19
-	jsr SetScreenPointer
 	rts
+
 !otherStep:
 	cmp #STEP_CLEARWELL
 	bne !otherStep+
 
-	jsr FillLine
-	dec linesLeft			// all lines done?
-	beq !skip+ 				// yes. prepare next step
-	rts 					// no. continue on next update
+	jsr DrawLine
+	dec linesLeft
+	bmi !skip+
+	rts
 !skip:
 	// done clearing
 	// print text and go to next mode
+	ldy #WELL_GAMEOVER
+	jsr PRINT_WELLDATA
 	inc currentStep
-	jmp PrintGameOver
+	rts
 !otherStep:
 
 	// waiting for a key or fire button
 
-
-
+	jsr GetInput
+	lda inputResult
+	cmp #DOWN
+	beq !exit+
+	cmp #TURNCLOCK
+	beq !exit+
 	rts
+!exit:
+	jmp EndGameOverMode
+	//rts
 
+// ----------------------------------------------------
 
+DrawLine:
+	clc
+	ldy #12
+	ldx linesLeft
+	jsr PLOT
 
+	lda drawCharacter
+	ldy #10
+!loop:
+	jsr PRINT
+	dey
+	bne !loop-
+	rts
 
 // ---------------------------------------------------
 
 EndGameOverMode:
-
-
+	lda #MODE_ENTERNAME
+	sta gameMode
+	jsr StartEnterNameMode
+	rts
 
 // ---------------------------------------------------
 
-
-// files a line with the drawcharacter
-
-FillLine:
-	lda drawCharacter	 	// get char
-	ldy #$00
-!loop:
-	sta (screenPointer),y 	// store on screen
-	iny
-	cpy #10 				// line done?
-	bne !loop-
-	jsr UpOneRow 			// prepare for next line
-	rts
-
-// -----------------------------------------------
-
-PrintGameOver:
-
-	ldy #WELL_GAMEOVER
-	jsr PRINT_WELLDATA
-	rts
-
-// -----------------------------------------------
 
 // the character to fill the well with
 drawCharacter:
