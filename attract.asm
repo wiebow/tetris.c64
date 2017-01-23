@@ -42,7 +42,6 @@ triggered:
 	lda #SCREEN_TITLE 		// yes. reset cycle
 	sta attractStep
 !skip:
-
 	ldy attractStep
 	jmp PRINT_SCREEN
 

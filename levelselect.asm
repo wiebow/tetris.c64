@@ -12,108 +12,113 @@ StartLevelSelectMode:
 	sta levelFlashDelay 		// and delay counter
 
 	ldy #SCREEN_LEVELSELECT
-	jmp PRINT_SCREEN
+	jsr PRINT_SCREEN
+
+	// print the hi scores!
+	ldx #14
+	ldy #12
+	jsr PRINT_HISCORE_TABLE
 
 // --------------------------------------------------
 
 UpdateLevelSelectMode:
-			jsr GetInput 				// check for input
-			ldx inputResult
-			cpx #NOINPUT
-			beq doLevelFlash
+	jsr GetInput 				// check for input
+	ldx inputResult
+	cpx #NOINPUT
+	beq doLevelFlash
 
-			// there is input
+	// there is input
 
-			cpx #TURNCLOCK 				// hit fire?
-			bne !skip+
-			jmp EndLevelSelectMode
+	cpx #TURNCLOCK 				// hit fire?
+	bne !skip+
+	jmp EndLevelSelectMode
 !skip:
-			cpx #DOWN 					// hit return?
-			bne !skip+
-			jmp EndLevelSelectMode
+	cpx #DOWN 					// hit return?
+	bne !skip+
+	jmp EndLevelSelectMode
 !skip:
-			cpx #LEFT
-			bne !skip+
-			lda currentLevel
-			beq doLevelFlash 			// we cant go lower, goto flashing
-			sta previousLevel 			// store level
-			dec currentLevel 			// and change level
-			jmp inputDone
+	cpx #LEFT
+	bne !skip+
+	lda currentLevel
+	beq doLevelFlash 			// we cant go lower, goto flashing
+	sta previousLevel 			// store level
+	dec currentLevel 			// and change level
+	jmp inputDone
 !skip:
-			cpx #RIGHT
-			bne doLevelFlash  			// no further relevant input, goto flashing
-			lda currentLevel
-			cmp #9
-			beq doLevelFlash 			// we cannot go higher, goto flashing
-			sta previousLevel
-			inc currentLevel
+	cpx #RIGHT
+	bne doLevelFlash  			// no further relevant input, goto flashing
+	lda currentLevel
+	cmp #9
+	beq doLevelFlash 			// we cannot go higher, goto flashing
+	sta previousLevel
+	inc currentLevel
 inputDone:
-			// level select has changed
-			// make sure previous level is showing
+	// level select has changed
+	// make sure previous level is showing
 
-			ldx previousLevel
-			lda levelY,x
-			pha
-			lda levelX,x
-			tay
-			pla
-			tax
-			clc
-			jsr PLOT
+	ldx previousLevel
+	lda levelY,x
+	pha
+	lda levelX,x
+	tay
+	pla
+	tax
+	clc
+	jsr PLOT
 
-			lda previousLevel
-			adc #$30  				// add #$30 to it to get a screencode
-			jsr PRINT
+	lda previousLevel
+	adc #$30  				// add #$30 to it to get a screencode
+	jsr PRINT
 
-			// make sure to show change asap
+	// make sure to show change asap
 
-			lda #$01
-			sta levelDisplayFlag
-			sta levelFlashDelay
+	lda #$01
+	sta levelDisplayFlag
+	sta levelFlashDelay
 
 doLevelFlash:
-			dec levelFlashDelay
-			beq !skip+ 				// do flashing
-			rts 					// nothing to do anymore
+	dec levelFlashDelay
+	beq !skip+ 				// do flashing
+	rts 					// nothing to do anymore
 !skip:
-			// we are going to flash the level indicator
+	// we are going to flash the level indicator
 
-			lda #FLASH_DELAY
-			sta levelFlashDelay 	// reset the delay counter
+	lda #FLASH_DELAY
+	sta levelFlashDelay 	// reset the delay counter
 
-			// set cursor to correct location
+	// set cursor to correct location
 
-			ldx currentLevel
-			lda levelY,x
-			pha
-			lda levelX,x
-			tay
-			pla
-			tax
-			clc
-			jsr PLOT
+	ldx currentLevel
+	lda levelY,x
+	pha
+	lda levelX,x
+	tay
+	pla
+	tax
+	clc
+	jsr PLOT
 
-			// flip the display flag
+	// flip the display flag
 
-			lda levelDisplayFlag
-			eor #%00000001
-			sta levelDisplayFlag
+	lda levelDisplayFlag
+	eor #%00000001
+	sta levelDisplayFlag
 
-			beq space 				// flag clear? then print space
-			lda currentLevel 		// get the level value
-			adc #$30 				// add #$30 to it to get a screencode
-			jmp PRINT 				// print and exit
+	beq space 				// flag clear? then print space
+	lda currentLevel 		// get the level value
+	adc #$30 				// add #$30 to it to get a screencode
+	jmp PRINT 				// print and exit
 space:
-			lda #$20
-			jmp PRINT 				// and exit
+	lda #$20
+	jmp PRINT 				// and exit
 
 // ----------------------------------
 
 EndLevelSelectMode:
-			lda #MODE_PLAY
-			sta gameMode
-			jsr StartPlayMode
-			rts
+	lda #MODE_PLAY
+	sta gameMode
+	jsr StartPlayMode
+	rts
 
 // ----------------------------------
 

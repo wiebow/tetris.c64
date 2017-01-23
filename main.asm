@@ -24,7 +24,7 @@ Tetris for 6502. (c) WdW 2015/16/17
 
 // ------------------------------------------------
 
-.pc = $c000 "maincode"
+.pc = $5000 "maincode"
 
 // import game source files
 
@@ -41,6 +41,7 @@ Tetris for 6502. (c) WdW 2015/16/17
 .import source "gameover.asm"
 .import source "attract.asm"
 .import source "levelselect.asm"
+.import source "controlled_input.asm"
 
 START:
 	// initial setup
@@ -62,8 +63,9 @@ START:
     jsr SetupRandom 		// set the rnd seed
     jsr ClearScreen 		// clear the screen and set colors
 
-    // load the hiscores
+    jsr RESET_HISCORE_TABLE
 
+    // load the hiscores
     // ..
 
 	// initial setup done
@@ -144,13 +146,13 @@ pauseText:
 .import binary "tetris_paused.raw"
 
 titleScreenData:
-.import binary "tetris_titlescreen.raw"
+.import binary "tetris_titlescreen.bin"
 
 keysScreenData:
 .import binary "tetris_keys.raw"
 
 creditsScreenData:
-.import binary "tetris_credits.raw"
+.import binary "tetris_credits.bin"
 
 selectScreenData:
 .import binary "tetris_select_and_high.raw"
