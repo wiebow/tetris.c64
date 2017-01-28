@@ -62,10 +62,7 @@ UpdateGameOverMode:
 	inc currentStep
 	rts
 !otherStep:
-
 	// waiting for a key or fire button
-
-	jsr GetInput
 	lda inputResult
 	cmp #DOWN
 	beq !exit+

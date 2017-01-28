@@ -1,4 +1,5 @@
 
+
 .const keyPressed = $cb 	// scnkey puts code of held key here.
 .const INPUTDELAY = 15	 	// update delay between input checks
 
@@ -21,9 +22,10 @@
 
 // this routine will scan keyboard first and then the joystick
 // but only if there was no input from the keyboard
+// it will leave the detected input in inputResult
 GetInput:
 	jsr GetKeyInput
-	lda inputResult
+//	lda inputResult
 	cmp #NOINPUT
 	bne !skip+
 	jsr GetJoyInput
@@ -35,30 +37,31 @@ GetInput:
 // this subroutine gets keyboard input
 // only one key at a time is registered
 // "inputResult" will hold the registered input
+// and accumulator as well
 
 GetKeyInput:
-			lda #NOINPUT 			// first assume there is no input
-			sta inputResult
+	lda #NOINPUT 			// first assume there is no input
+	sta inputResult
 
-			lda keyPressed 			// get held key code
-			cmp previousKey 		// is it a different key than before?
-			bne !skip+	 			// if yes, then skip the current input delay
-									// because we want snappy controls
+	lda keyPressed 			// get held key code
+	cmp previousKey 		// is it a different key than before?
+	bne !skip+	 			// if yes, then skip the current input delay
+							// because we want snappy controls
 doDelay:
-			dec inputDelayCounter 	// count down
-			beq !skip+ 				// continue if delay passed
-			rts 					// delay ongoing. exit. no input.
+	dec inputDelayCounter 	// count down
+	beq !skip+ 				// continue if delay passed
+	rts 					// delay ongoing. exit. no input.
 !skip:
-			sta previousKey 		// save key code for next update
-			cmp #NOKEY 				// is it the no key held code?
-			bne !skip+ 				// no
-			lda #NOINPUT 			// yes. select that input result
+	sta previousKey 		// save key code for next update
+	cmp #NOKEY 				// is it the no key held code?
+	bne !skip+ 				// no
+	lda #NOINPUT 			// yes. select that input result
 !skip:
-			sta inputResult 		// store input result
+	sta inputResult 		// store input result
 
-			lda #INPUTDELAY 		// restore key delay counter
-			sta inputDelayCounter
-			rts
+	ldx #INPUTDELAY 		// restore key delay counter
+	stx inputDelayCounter
+	rts
 
 // -------------------------------------------------
 
@@ -71,63 +74,62 @@ doDelay:
 .const NOJOY  = $ff 				// value for no joy input
 
 GetJoyInput:
-			lda #NOINPUT 			// assume there is no input
-			sta inputResult
+	lda #NOINPUT 			// assume there is no input
+	sta inputResult
 
-			lda CIAPRA 				// load the input byte
-			cmp previousJoy 		// same as previous input?
-			bne !skip+ 				// no, so skip delay
+	lda CIAPRA 				// load the input byte
+	cmp previousJoy 		// same as previous input?
+	bne !skip+ 				// no, so skip delay
 joyDelay:
-			dec inputDelayCounter	// update delay
-			beq !skip+ 				// continue if delay complete
-			rts
+	dec inputDelayCounter	// update delay
+	beq !skip+ 				// continue if delay complete
+	rts
 !skip:
-			ldx #INPUTDELAY 		// reset the delay counter
-			stx inputDelayCounter
+	ldx #INPUTDELAY 		// reset the delay counter
+	stx inputDelayCounter
 
-			sta previousJoy 		// save this input value
-			cmp #NOJOY 				// same as noinput?
-			bne !nextjoy+ 			// no, so go check the possiblities
+	sta previousJoy 		// save this input value
+	cmp #NOJOY 				// same as noinput?
+	bne !nextjoy+ 			// no, so go check the possiblities
 
-			lda #NOINPUT 			// there is no input, store it
-			sta inputResult 		// in result
-			rts
+	lda #NOINPUT 			// there is no input, store it
+	sta inputResult 		// in result
+	rts
 !nextjoy:
-			clc 					// clear the carry bit
-			lsr 					// check bit 0: joy up
-			bcs !nextjoy+
+	clc 					// clear the carry bit
+	lsr 					// check bit 0: joy up
+	bcs !nextjoy+
 
-			lda #TURNCOUNTER 		// store the correct code ...
-			sta inputResult 		// as result
-			rts
+	lda #TURNCOUNTER 		// store the correct code ...
+	sta inputResult 		// as result
+	rts
 !nextjoy:
-			lsr 					// check bit 1: joy down
-			bcs !nextjoy+ 			// bit set means not pressed
-			lda #DOWN
-			sta inputResult
-			rts
+	lsr 					// check bit 1: joy down
+	bcs !nextjoy+ 			// bit set means not pressed
+	lda #DOWN
+	sta inputResult
+	rts
 !nextjoy:
-			lsr 					// check bit 2: joy left
-			bcs !nextjoy+
-			lda #LEFT
-			sta inputResult
-			rts
+	lsr 					// check bit 2: joy left
+	bcs !nextjoy+
+	lda #LEFT
+	sta inputResult
+	rts
 !nextjoy:
-			lsr 					// check bit 3: joy right
-			bcs !nextjoy+
-			lda #RIGHT
-			sta inputResult
-			rts
+	lsr 					// check bit 3: joy right
+	bcs !nextjoy+
+	lda #RIGHT
+	sta inputResult
+	rts
 !nextjoy:
-			lsr 					// check bit 4: joy fire button
-			bcs !nextjoy+
-			lda #TURNCLOCK
-			sta inputResult
-			rts
-!nextjoy:
-			rts 					// those were all the relevant bits.
-									// if we get to this, NOINPUT is still
-									// stored in inputResult.
+	lsr 					// check bit 4: joy fire button
+	bcs !exit+
+	lda #TURNCLOCK
+	sta inputResult
+!exit:
+	rts 					// those were all the relevant bits.
+							// if we get to this, NOINPUT is still
+							// stored in inputResult.
 
 // ------------------------------------------------
 
@@ -137,13 +139,12 @@ joyDelay:
 inputResult:
 	.byte 0
 
-
 inputDelayCounter:
-			.byte INPUTDELAY		// if this reaches 0, the player input is read
+	.byte INPUTDELAY		// if this reaches 0, the player input is read
 
 previousKey:
-			.byte DOWN				// previous key held
+	.byte NOINPUT			// previous key held
 
 previousJoy:
-			.byte 255 				// previous joy direction held
+	.byte 255 				// previous joy direction held
 

@@ -19,12 +19,11 @@ UpdateAttractMode:
 	beq triggered 			// swap screen when triggered
 
 	// check for key or joy button press
-	jsr GetKeyInput
+//	jsr GetInput
+
 	lda inputResult
 	cmp #DOWN 				// enter pressed?
 	beq !skip+ 				// yes
-	jsr GetJoyInput
-	lda inputResult
 	cmp #TURNCLOCK 			// joy button pressed?
 	beq !skip+ 				// yes
 	rts

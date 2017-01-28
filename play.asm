@@ -75,7 +75,7 @@ UpdatePlayMode:
 !skip:
 	// check input and react
 	// we only allow one action per update.
-	jsr GetInput
+//	jsr GetInput
 	ldx inputResult
 	cpx #NOINPUT
 	bne !nextControl+
@@ -85,8 +85,7 @@ UpdatePlayMode:
 !nextControl:
 	cpx #RESET
 	bne !nextControl+
-
-	// to do : jmp ResetGame
+	jmp RESET_GAME
 
 !nextControl:
 	cpx #PAUSE
@@ -163,94 +162,94 @@ EndPlayMode:
 // up the player level
 
 AddLevel:
-			inc currentLevel		// go up a level
+	inc currentLevel		// go up a level
 
-			// update the level values
-			// so we can print it later
+	// update the level values
+	// so we can print it later
 
-			sed 					// set decimal mode
-			clc 					// clear the carry bit
-			lda gameLevel+0  		// get current total lines value
-			adc #$01   				// go up a level
-			sta gameLevel+0 		// store it.
+	sed 					// set decimal mode
+	clc 					// clear the carry bit
+	lda gameLevel+0  		// get current total lines value
+	adc #$01   				// go up a level
+	sta gameLevel+0 		// store it.
 
-			lda gameLevel+1 		// and the 2nd byte.
-			adc #$00 				// always 0, we can add 4 lines max.
-			sta gameLevel+1
-			cld 					// clear decimal mode
+	lda gameLevel+1 		// and the 2nd byte.
+	adc #$00 				// always 0, we can add 4 lines max.
+	sta gameLevel+1
+	cld 					// clear decimal mode
 
-			// reset the 'lines made this level' counter
+	// reset the 'lines made this level' counter
 
-			lda levelLinesCounter
-			sec
-			sbc #linesPerLevel		// restart count ...
-			sta levelLinesCounter 	// ... so we can restart this check.
+	lda levelLinesCounter
+	sec
+	sbc #linesPerLevel		// restart count ...
+	sta levelLinesCounter 	// ... so we can restart this check.
 
-			// decrease the game delay
+	// decrease the game delay
 
-			lda fallDelay 			// get the current delay
-			sec
-			sbc #delayChange		// make delay shorter
-			bcs !skip+ 				// is delay lower than 0?
-			lda #delayChange 		// yes: set shortest delay.
+	lda fallDelay 			// get the current delay
+	sec
+	sbc #delayChange		// make delay shorter
+	bcs !skip+ 				// is delay lower than 0?
+	lda #delayChange 		// yes: set shortest delay.
 !skip:
-			sta fallDelay 			// store the new delay value
-			sta fallDelayTimer 		// reset the current delay counter
-			rts
+	sta fallDelay 			// store the new delay value
+	sta fallDelayTimer 		// reset the current delay counter
+	rts
 
 
 // --------------------------------------------------
 
 UpdateLineFlash:
-			jsr FlashLines
-			lda totalFlashDelay 	// flashed long enough?
-			// sta $0400
-			beq exitflash			// yes. remove the lines and update score
-			rts 					// not yet. do this again on next update
+	jsr FlashLines
+	lda totalFlashDelay 	// flashed long enough?
+	// sta $0400
+	beq exitflash			// yes. remove the lines and update score
+	rts 					// not yet. do this again on next update
 
 exitflash:
-			// flashing is all done
+	// flashing is all done
 
-			jsr AddLinesTotal 		// add the made lines to total
-			jsr PrintTotalLinesMade // and print these
+	jsr AddLinesTotal 		// add the made lines to total
+	jsr PrintTotalLinesMade // and print these
 
-			jsr AddLineValue		// add score made by lines
-			jsr PrintScore 			// show the score
+	jsr AddLineValue		// add score made by lines
+	jsr PrintScore 			// show the score
 
-			jsr RemoveLines 		// then remove lines from screen
+	jsr RemoveLines 		// then remove lines from screen
 
-			lda levelLinesCounter 	// get lines made so far in this level
-			clc
-			adc linesMade 			// add the made lines
-			sta levelLinesCounter
+	lda levelLinesCounter 	// get lines made so far in this level
+	clc
+	adc linesMade 			// add the made lines
+	sta levelLinesCounter
 
-			lda #SND_LINE
-			ldx linesMade 			// determine sound to play
-			cpx #4
-			bne !skip+
-			lda #SND_TETRIS
+	lda #SND_LINE
+	ldx linesMade 			// determine sound to play
+	cpx #4
+	bne !skip+
+	lda #SND_TETRIS
 !skip:
-			jsr playsound 			// play it
+	jsr playsound 			// play it
 
-			lda #$00				// reset the lines made
-			sta linesMade
+	lda #$00				// reset the lines made
+	sta linesMade
 
-			// go up a level?
+	// go up a level?
 
-			lda levelLinesCounter	// get lines made so far at this level
-			cmp #linesPerLevel 		// did we make enough to go up a level?
-			bcc !skip+ 				// no: If the C flag is 0, then A (unsigned) < NUM (unsigned)
-									// and BCC will branch
-			jsr AddLevel 			// go up 1 level
-			jsr PrintLevel 			// print it
+	lda levelLinesCounter	// get lines made so far at this level
+	cmp #linesPerLevel 		// did we make enough to go up a level?
+	bcc !skip+ 				// no: If the C flag is 0, then A (unsigned) < NUM (unsigned)
+							// and BCC will branch
+	jsr AddLevel 			// go up 1 level
+	jsr PrintLevel 			// print it
 !skip:
-			// add a new block to play with
+	// add a new block to play with
 
-			jsr NewBlock 			// create a new block
-			beq !skip+ 				// fits. so exit
-			jmp EndPlayMode 		// no fit!
+	jsr NewBlock 			// create a new block
+	beq !skip+ 				// fits. so exit
+	jmp EndPlayMode 		// no fit!
 !skip:
-			rts
+	rts
 
 // --------------------------------------------------
 
@@ -275,7 +274,7 @@ SetPause:
 // ----------------------------------------------
 
 UpdatePause:
-	jsr GetInput
+//	jsr GetInput
 	lda inputResult
 	cmp #PAUSE
 	bne !exit+
@@ -289,6 +288,11 @@ UpdatePause:
 	rts
 
 // ----------------------------------------------
+
+RESET_GAME:
+	lda #MODE_ATTRACT
+	sta gameMode
+	jmp StartAttractMode
 
 // -----------------------------------------------------
 

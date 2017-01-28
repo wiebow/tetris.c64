@@ -16,13 +16,13 @@ StartLevelSelectMode:
 
 	// print the hi scores!
 	ldx #14
-	ldy #12
+	ldy #14
 	jsr PRINT_HISCORE_TABLE
 
 // --------------------------------------------------
 
 UpdateLevelSelectMode:
-	jsr GetInput 				// check for input
+//	jsr GetInput 				// check for input
 	ldx inputResult
 	cpx #NOINPUT
 	beq doLevelFlash
