@@ -269,166 +269,160 @@ DropBlock:
 
 // register A holds: 0 if all went well, 1 if new block overlaps screen data (game over!)
 NewBlock:
+	// reset the block fall delay
+	lda fallDelay
+	sta fallDelayTimer
 
-			// reset the block fall delay
+	// nextBlockID was printed as the next block.
+	// set location to remove from screen
 
-			lda fallDelay
-			sta fallDelayTimer
+	ldx #25 				// erase block from 25,15
+	ldy #15
+	stx blockXposition 		// save the position
+	sty blockYposition
+	jsr SetScreenPointer
 
-			// nextBlockID was printed as the next block.
-			// set location to remove from screen
+	// select and save the ID
+	// because we will create the block later on
+	lda nextBlockID
+	pha
 
-			ldx #25 				// erase block from 25,15
-			ldy #15
-			stx blockXposition 		// save the position
-			sty blockYposition
-			jsr SetScreenPointer
+	jsr SelectBlock 		// select it
+	jsr EraseBlock 			// remove it
 
-			// select and save the ID
-			// because we will create the block later on
+	// get the id of the NEW block
+	// and print it on the bottomright of the screen
+	jsr GetRandom
+	sta nextBlockID 		// save next block id
+	jsr SetScreenPointer 	// restore screenpointer to 25,15
+							// as set previously
+	lda nextBlockID
+	jsr SelectBlock
+	jsr PrintBlock 			// print it.
 
-			lda nextBlockID
-			pha
+	// done.
+	// create the new player block
+	ldx #15 				// put new block on 15,0
+	ldy #00
+	stx blockXposition 		// save the position
+	sty blockYposition
+	jsr SetScreenPointer
 
-			jsr SelectBlock 		// select it
-			jsr EraseBlock 			// remove it
+	pla 					// restore the player block id
+	sta currentBlockID 		// put in current id address
+	jsr SelectBlock 		// select it
 
-			// get the id of the NEW block
-			// and print it on the bottomright of the screen
-
-			jsr GetRandom
-			sta nextBlockID 		// save next block id
-			jsr SetScreenPointer 	// restore screenpointer to 25,15
-									// as set previously
-			lda nextBlockID
-			jsr SelectBlock
-			jsr PrintBlock 			// print it.
-
-			// done.
-
-			// create the new player block
-
-			ldx #15 				// put new block on 15,0
-			ldy #00
-			stx blockXposition 		// save the position
-			sty blockYposition
-			jsr SetScreenPointer
-
-			pla 					// restore the player block id
-			sta currentBlockID 		// put in current id address
-			jsr SelectBlock 		// select it
-
-			jsr CheckBlockSpace 	// will it fit?
-			bne !skip+ 				// A is set to 1, so no
-			jsr PrintBlock 			// print it.
-			lda #$00 				// notify all is well.
-			rts
+	jsr CheckBlockSpace 	// will it fit?
+	bne !skip+ 				// A is set to 1, so no
+	jsr PrintBlock 			// print it.
+	lda #$00 				// notify all is well.
+	rts
 !skip:
-			jsr PrintBlock 			// print it
-			lda #$01 				// notify that it doesnt fit!!!
-			rts
+	jsr PrintBlock 			// print it
+	lda #$01 				// notify that it doesnt fit!!!
+	rts
 
 
 // -------------------------------------------------
 
 BlockLeft:
-			jsr EraseBlock 			// remove block on this position
-			dec blockXposition 		// alter block position
-			jsr CheckBlockSpace 	// will it fit?
-			beq !skip+ 				// yes. print it
-			inc blockXposition 		// no. move it back
+	jsr EraseBlock 			// remove block on this position
+	dec blockXposition 		// alter block position
+	jsr CheckBlockSpace 	// will it fit?
+	beq !skip+ 				// yes. print it
+	inc blockXposition 		// no. move it back
 !skip:
-			jsr PrintBlock
- 			rts
+	jsr PrintBlock
+	rts
 
 BlockRight:
-  			jsr EraseBlock
-  			inc blockXposition
-  			jsr CheckBlockSpace
- 			beq !skip+
-  			dec blockXposition
+	jsr EraseBlock
+	inc blockXposition
+	jsr CheckBlockSpace
+	beq !skip+
+	dec blockXposition
 !skip:
-  			jsr PrintBlock
-  			rts
+	jsr PrintBlock
+	rts
 
 BlockDown:
-			jsr EraseBlock
-			inc blockYposition
-			jsr CheckBlockSpace
-			beq !skip+
+	jsr EraseBlock
+	inc blockYposition
+	jsr CheckBlockSpace
+	beq !skip+
 
-			// block doesn't fit
-			dec blockYposition
-			jsr PrintBlock
+	// block doesn't fit
+	dec blockYposition
+	jsr PrintBlock
 
-			lda #$04 				// we made block drop
-			sta fallDelayTimer 		// so create new one without delay
-			rts
+	lda #1 					// we made block drop
+	sta fallDelayTimer 		// so create new one without delay
+	rts
 !skip:
-			jsr PrintBlock
+	jsr PrintBlock
 
- 			lda #$04 	 			// have a smaller falldelay
- 			sta fallDelayTimer 		// as we move down ourselves
+	lda #1 		 			// have a smaller falldelay
+	sta fallDelayTimer 		// as we move down ourselves
 
- 			// moving the block down gives points
+		// moving the block down gives points
 
-			lda #1
- 			sta addition+2
- 			lda #0
- 			sta addition+1
- 			sta addition
- 			jsr AddScore
- 			jsr PrintScore
-			rts
+	lda #1
+	sta addition+2
+	lda #0
+	sta addition+1
+	sta addition
+	jsr AddScore
+	jsr PrintScore
+	rts
 
 BlockRotateCCW:
-  			jsr EraseBlock 			// remove block on this position
-  			lda #$01 				// yes. 1 means counter clock wise
- 			jsr AnimateBlock 		// rotate it
- 			jsr CheckBlockSpace 	// will it fit?
- 			beq !skip+ 				// yes, print it
- 			lda #$00 				// no
-  			jsr AnimateBlock 		// turn it back
+	jsr EraseBlock 			// remove block on this position
+	lda #$01 				// yes. 1 means counter clock wise
+	jsr AnimateBlock 		// rotate it
+	jsr CheckBlockSpace 	// will it fit?
+	beq !skip+ 				// yes, print it
+	lda #$00 				// no
+	jsr AnimateBlock 		// turn it back
 !skip:
-  			jsr PrintBlock
-  			rts
+	jsr PrintBlock
+	rts
 
 BlockRotateCW:
- 			jsr EraseBlock
- 			lda #$00
- 			jsr AnimateBlock
- 			jsr CheckBlockSpace
- 			beq !skip+
- 			lda #$01
- 			jsr AnimateBlock
+	jsr EraseBlock
+	lda #$00
+	jsr AnimateBlock
+	jsr CheckBlockSpace
+	beq !skip+
+	lda #$01
+	jsr AnimateBlock
 !skip:
- 			jsr PrintBlock
- 			rts
+	jsr PrintBlock
+	rts
 
 // ---------------------------------------------------------------------------------------------
 
 // registers to store information in
 
 blockXposition:
-			.byte 0 				// current player block x position
+	.byte 0 				// current player block x position
 blockYposition:
-			.byte 0 				// current player block y position
+	.byte 0 				// current player block y position
 currentBlockID:
-			.byte 0 				// current block ID
+	.byte 0 				// current block ID
 nextBlockID:
-			.byte 0 				// this is the next block to fall
+	.byte 0 				// this is the next block to fall
 
 currentFrame:
-			.byte 0  				// frame of current block
+	.byte 0  				// frame of current block
 firstFrame:
-			.byte 0					// first animation frame for current block
+	.byte 0					// first animation frame for current block
 lastFrame:
-			.byte 0					// last animation frame for current block
+	.byte 0					// last animation frame for current block
 
 fallDelay:
-			.byte 0 				// delay between block drops for this level
+	.byte 0 				// delay between block drops for this level
 fallDelayTimer:
-			.byte 0 				// current timer for delay
+	.byte 0 				// current timer for delay
 
 
 // ---------------------------------------------------------------------------------------------
@@ -438,150 +432,142 @@ fallDelayTimer:
 
 //                0 1  2  3  4  5  6
 blockFrameStart:
-			.byte 0,4, 8,12,14,16,18
+	.byte 0,4, 8,12,14,16,18
 
 blockFrameEnd:
-			.byte 3,7,11,13,15,17,18
+	.byte 3,7,11,13,15,17,18
 
 // these lo and hi byte pointers refer to the block data adress values
 
 frameArrayLo:
-			.byte <frame00, <frame01, <frame02, <frame03 		// block 0
-			.byte <frame04, <frame05, <frame06, <frame07 		// block 1
-			.byte <frame08, <frame09, <frame10, <frame11 		// block 2
-			.byte <frame12, <frame13					 		// block 3
-			.byte <frame14, <frame15					 		// block 4
-			.byte <frame16, <frame17					 		// block 5
-			.byte <frame18								 		// block 6
+	.byte <frame00, <frame01, <frame02, <frame03 		// block 0
+	.byte <frame04, <frame05, <frame06, <frame07 		// block 1
+	.byte <frame08, <frame09, <frame10, <frame11 		// block 2
+	.byte <frame12, <frame13					 		// block 3
+	.byte <frame14, <frame15					 		// block 4
+	.byte <frame16, <frame17					 		// block 5
+	.byte <frame18								 		// block 6
 
 frameArrayHi:
-			.byte >frame00, >frame01, >frame02, >frame03 		// block 0
-			.byte >frame04, >frame05, >frame06, >frame07 		// block 1
-			.byte >frame08, >frame09, >frame10, >frame11 		// block 2
-			.byte >frame12, >frame13					 		// block 3
-			.byte >frame14, >frame15					 		// block 4
-			.byte >frame16, >frame17					 		// block 5
-			.byte >frame18								 		// block 6
+	.byte >frame00, >frame01, >frame02, >frame03 		// block 0
+	.byte >frame04, >frame05, >frame06, >frame07 		// block 1
+	.byte >frame08, >frame09, >frame10, >frame11 		// block 2
+	.byte >frame12, >frame13					 		// block 3
+	.byte >frame14, >frame15					 		// block 4
+	.byte >frame16, >frame17					 		// block 5
+	.byte >frame18								 		// block 6
 
 // block0, 4 frames
-
 frame00:
-			.text " II "
-			.text "  I "
-			.text "  I "
-			.text "    "
+	.text " II "
+	.text "  I "
+	.text "  I "
+	.text "    "
 frame01:
-			.text "   I"
-			.text " III"
-			.text "    "
-			.text "    "
+	.text "   I"
+	.text " III"
+	.text "    "
+	.text "    "
 frame02:
-			.text " I  "
-			.text " I  "
-			.text " II "
-			.text "    "
+	.text " I  "
+	.text " I  "
+	.text " II "
+	.text "    "
 frame03:
-			.text "    "
-			.text " III"
-			.text " I  "
-			.text "    "
+	.text "    "
+	.text " III"
+	.text " I  "
+	.text "    "
 
 // block1, 4 frames
-
 frame04:
-			.text "  G "
-			.text " GG "
-			.text "  G "
-			.text "    "
+	.text "  G "
+	.text " GG "
+	.text "  G "
+	.text "    "
 frame05:
-			.text "  G "
-			.text " GGG"
-			.text "    "
-			.text "    "
+	.text "  G "
+	.text " GGG"
+	.text "    "
+	.text "    "
 frame06:
-			.text "  G "
-			.text "  GG"
-			.text "  G "
-			.text "    "
+	.text "  G "
+	.text "  GG"
+	.text "  G "
+	.text "    "
 frame07:
-			.text "    "
-			.text " GGG"
-			.text "  G "
-			.text "    "
+	.text "    "
+	.text " GGG"
+	.text "  G "
+	.text "    "
 
 // block2, 4 frames
-
 frame08:
-			.text " HH "
-			.text " H  "
-			.text " H  "
-			.text "    "
+	.text " HH "
+	.text " H  "
+	.text " H  "
+	.text "    "
 frame09:
-			.text "    "
-			.text "HHH "
-			.text "  H "
-			.text "    "
+	.text "    "
+	.text "HHH "
+	.text "  H "
+	.text "    "
 frame10:
-			.text " H  "
-			.text " H  "
-			.text "HH  "
-			.text "    "
+	.text " H  "
+	.text " H  "
+	.text "HH  "
+	.text "    "
 frame11:
-			.text "H   "
-			.text "HHH "
-			.text "    "
-			.text "    "
+	.text "H   "
+	.text "HHH "
+	.text "    "
+	.text "    "
 
 // block3, 2 frames
-
 frame12:
-			.text " X  "
-			.text " XX "
-			.text "  X "
-			.text "    "
+	.text " X  "
+	.text " XX "
+	.text "  X "
+	.text "    "
 frame13:
-			.text " XX "
-			.text "XX  "
-			.text "    "
-			.text "    "
+	.text " XX "
+	.text "XX  "
+	.text "    "
+	.text "    "
 
 // block4, 2 frames
-
 frame14:
-			.text "  H "
-			.text " HH "
-			.text " H  "
-			.text "    "
+	.text "  H "
+	.text " HH "
+	.text " H  "
+	.text "    "
 frame15:
-			.text "HH  "
-			.text " HH "
-			.text "    "
-			.text "    "
+	.text "HH  "
+	.text " HH "
+	.text "    "
+	.text "    "
 
 //block5, 2 frames
-
 frame16:
+	.byte 32,92,32,32
+	.byte 32,93,32,32
+	.byte 32,93,32,32
+	.byte 32,94,32,32
 
-			.byte 32,92,32,32
-			.byte 32,93,32,32
-			.byte 32,93,32,32
-			.byte 32,94,32,32
-
-			// .text " K  "
-			// .text " K  "
-			// .text " K  "
-			// .text " K  "
+	// .text " K  "
+	// .text " K  "
+	// .text " K  "
+	// .text " K  "
 frame17:
-			.text "    "
-			.byte 89,90,90,91
+	.text "    "
+	.byte 89,90,90,91
 //			.text "YZZK"
-			.text "    "
-			.text "    "
+	.text "    "
+	.text "    "
 
 // block6, 1 frame
-
 frame18:
-			.text "    "
-			.text " JJ "
-			.text " JJ "
-			.text "    "
+	.text "    "
+	.text " JJ "
+	.text " JJ "
+	.text "    "
