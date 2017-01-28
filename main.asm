@@ -43,6 +43,7 @@ Tetris for 6502. (c) WdW 2015/16/17
 .import source "levelselect.asm"
 .import source "controlled_input.asm"
 
+
 START:
 	// initial setup
 	// set the used video bank to bank 0 ($0000-$3fff)
@@ -68,6 +69,11 @@ START:
     // load the hiscores
     // ..
 
+    // setup interrupt to play the sound
+    lda #SND_MUSIC_TITLE
+    jsr music.init
+    jsr SETUP_MUSIC_IRQ
+
 	// initial setup done
 	// select mode and call mode entry routine
 	lda #MODE_ATTRACT
@@ -78,21 +84,21 @@ START:
 
 loopstart:
 
-.if (DEBUG) {
-	lda #11
-	sta $d020
-	sta $d021
-}
-
 	lda $d012 			// get raster line position
 	cmp #208			// wait for bottom of play area
 	bne loopstart
 
 .if (DEBUG) {
-	lda #$0f
+	lda LIGHT_GREY
 	sta $d020
-	sta $d021
 }
+
+	jsr GetInput
+
+	jsr COLOR_CHANGES
+
+!checkMode:
+
 	// determine game mode and update accordingly
 	lda gameMode
 	cmp #MODE_ATTRACT
@@ -119,10 +125,49 @@ loopstart:
 	bne loopend
 	jsr UpdateEnterNameMode
 loopend:
-	jsr music.play
+
+.if (DEBUG) {
+	lda screenColor
+	sta $d020
+}
 	jmp loopstart
 
 // ------------------------------------------
+
+COLOR_CHANGES:
+	lda inputResult
+	cmp #NOINPUT
+	beq !exit+
+
+	cmp #CHANGEBACKGROUND
+	bne !skip+
+
+	inc screenColor
+	lda screenColor
+	sta $d020
+	sta $d021
+	rts
+!skip:
+	cmp #CHANGECOLOUR
+	bne !exit+
+
+	dec charColor
+	bpl !skip+
+	lda #16
+	sta charColor
+!skip:
+	jsr SET_CHAR_COLOR
+!exit:
+	rts
+
+// ------------------------------------------
+
+
+screenColor:
+	.byte DARK_GRAY
+
+charColor:
+	.byte LIGHT_GREEN
 
 gameMode:
 	.byte 0

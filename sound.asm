@@ -15,6 +15,65 @@
 .const SND_MUSIC_GAMEOVER = 8
 
 
+SETUP_MUSIC_IRQ:
+	sei
+//	lda #$35
+//	sta $01
+	lda #<irq1
+	sta $0314 //fffe
+	lda #>irq1
+	sta $0315 //ffff
+	lda #$1b
+	sta $d011
+	lda #$80
+	sta $d012
+	lda #$81
+	sta $d01a
+	lda #$7f
+	sta $dc0d
+	sta $dd0d
+
+	lda $dc0d
+	lda $dd0d
+	lda #$ff
+	sta $d019
+
+//	lda #$37
+//	sta $01
+
+
+	cli
+	rts //jmp *
+//----------------------------------------------------------
+irq1:
+	// pha
+	// txa
+	// pha
+	// tya
+	// pha
+	lda #$ff
+	sta	$d019
+
+.if (DEBUG) {
+	lda #1
+	sta $d020
+}
+	jsr music.play
+
+.if (DEBUG) {
+	lda screenColor
+	sta $d020
+}
+	// pla
+	// tay
+	// pla
+	// tax
+	// pla
+	jmp $ea31
+	rti
+
+
+
 // set accumulator before calling this
 // it will not play when the sound delay counter is not 0
 playsound:
@@ -29,6 +88,7 @@ play:
 		ldx #0
 		ldy #0
         jsr music.init
+        jsr music.play
 !skip:
 		rts
 
