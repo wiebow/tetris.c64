@@ -7,7 +7,7 @@ StartEnterNameMode:
 	jsr PRINT_SCREEN
 
 	// see if we have a high score
-	// copy player score to the hiscore  new_score variable
+	// copy player score to the hiscore new_score variable
 	lda score
 	sta new_score
 	lda score+1
@@ -16,36 +16,12 @@ StartEnterNameMode:
 	sta new_score+2
 	jsr PROCESS_NEW_SCORE
 
-	ldx new_score_entry
-	beq !skip+
-
-	// insert new score in the table
-	// this should not be here, but ok.
-	jsr INSERT_HISCORE_ENTRY // uses X
-	ldx new_score_entry
-	jsr GET_ENTRY_OFFSET
-	ldy entry_offset
-	lda new_score
-	sta hiscore_table_start,y
-	lda new_score+1
-	sta hiscore_table_start+1,y
-	lda new_score+2
-	sta hiscore_table_start+2,y
-	// clear name in entry
-	ldx #TABLE_NAMELENGTH+1
-!loop:
-	lda #$20
-	sta hiscore_table_start+3,y
-	iny
-	dex
-	bne !loop-
-
-!skip:
 	ldx #14
-	ldy #12
+	ldy #14
 	jsr PRINT_HISCORE_TABLE
 
-	lda new_score_entry
+	// this is not zero when a score has been added
+	lda new_hiscore // new_score_entry
 	beq noNewHiScore
 
 	// print the hiscore message
@@ -58,7 +34,7 @@ StartEnterNameMode:
 	// put cursor in right position
 	lda #13
 	clc
-	adc new_score_entry
+	adc new_hiscore // new_score_entry
 	tax
 	ldy #21 		// x pos
 	clc
@@ -77,11 +53,11 @@ noNewHiScore:
 // ------------------------------------------------
 
 UpdateEnterNameMode:
-	lda new_score_entry
+	lda new_hiscore // new_score_entry
 	bne waitForInput
 
 	// wait for a button or key
-	jsr GetInput
+//	jsr GetInput
 	lda inputResult
 	cmp #DOWN
 	beq !exit+
@@ -91,10 +67,8 @@ UpdateEnterNameMode:
 !exit:
 	jmp EndEnterNameMode
 
+// player is entering name
 waitForInput:
-
-	lda #2
-	sta $d020
 
 	// accumulator is 0 when input is not yet done
 	jsr CONTROLLED_INPUT
@@ -158,6 +132,6 @@ hiscoremessage1:
 hiscoremessage2:
 	.text " enter your name "
 noHiscoremessage1:
-	.text "    too bad!!    "
+	.text "   too bad  :(   "
 noHiscoremessage2:
 	.text "    game over    "

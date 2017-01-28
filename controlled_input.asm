@@ -28,8 +28,9 @@ delete:
 	beq !exit+ //input
 	dec input_len
 	dey
-	lda #32 			// set space
+	lda #$2e          	// set dot
 	jsr PRINT  			// on screen
+	lda #$20 			// space
 	sta input_buffer,y 	// in buffer
 
 	lda #157			// move cursor back
