@@ -114,58 +114,12 @@ wellWrite:
 	bne wellRead 			// not all rows done yet
 	rts
 
-
 // -----------------------------------------
-
-// WriteScreenData:
-// 	// get the source address
-// 	lda dataSourceLo
-// 	sta read2+1
-// 	lda dataSourceHi
-// 	sta read2+2
-
-// 	// get the destination address
-
-// 	lda dataDestinationLo
-// 	sta write2+1
-// 	lda dataDestinationHi
-// 	sta write2+2
-
-// 	ldx #$00 				// reset read index
-// 	ldy #$00 				// reset write index
-
-// 	// start copy
-// read2:
-// 	lda $1000,x 			// get data
-// write2:
-// 	sta $1000,y 			// store at destination
-// 	inx 					// update read counter
-// 	bne !skip+ 				// roll over?
-// 	inc read2+2  			// yes. go to next memory page
-// !skip:
-// 	iny 					// update row counter
-// 	cpy dataWidth			// this row done?
-// 	bne read2 	 			// no, continue
-// 	ldy #$00 				// reset the row counter
-// 	lda write2+1 			// get lo byte of current screen position
-// 	clc
-// 	adc #40 				// add 40 to that, goto next row
-// 	bcc !skip+ 				// overflow?
-// 	inc write2+2  			// then go to next memory page
-// !skip:
-// 	sta write2+1 			// store lo byte
-
-// 	dec dataHeight 			// update counter
-// 	lda dataHeight
-// 	bne read2 				// not all rows done yet
-// 	rts
-
-// ----------------------------------------------
 
 // subroutine to clear the screen and color ram
 // also detroys sprite pointers.
 ClearScreen:
-	lda #11 			// dark grey
+	lda screenColor
 	sta $d020 			// set border color
 	sta $d021 			// set screen color
 	ldx #$00 			// reset offset register
@@ -175,7 +129,15 @@ ClearScreen:
 	sta $0500,x
 	sta $0600,x
 	sta $0700,x
-	lda #13				// light green (screen color code)
+	inx 				// increment counter
+	bne !loop- 			// continue?
+	jsr SET_CHAR_COLOR
+	rts
+
+SET_CHAR_COLOR:
+	ldx #0
+	lda charColor
+!loop:
 	sta $d800,x 		// store in color ram
 	sta $d900,x
 	sta $da00,x
@@ -183,10 +145,11 @@ ClearScreen:
 	inx 				// increment counter
 	bne !loop- 			// continue?
 
-    lda #153 			// print everything in light green ...
-    jsr PRINT 			// from now on (ascii code)
-
+	ldx charColor
+	lda chrColorCodes,x // get correct chr$ code
+	jsr PRINT
 	rts
+
 
 // ---------------------------------------------
 
@@ -293,6 +256,11 @@ dataDestinationLo:
 
 
 // -----------------------------------------------
+
+// chr$ codes needed for cursor when the character color is changed
+chrColorCodes:
+//        0	  1	2  3   4   5  6  7   8   9   10  11  12  13  14  15
+	.byte 144,5,28,159,156,30,31,158,129,149,150,151,152,153,154,155
 
 playAreaErase:
 		.byte 0
