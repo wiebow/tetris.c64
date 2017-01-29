@@ -19,6 +19,8 @@ StartLevelSelectMode:
 	ldy #14
 	jsr PRINT_HISCORE_TABLE
 
+	rts
+
 // --------------------------------------------------
 
 UpdateLevelSelectMode:

@@ -37,11 +37,13 @@ Tetris for 6502. (c) WdW 2015/16/17
 .import source "random.asm"
 .import source "play.asm"
 .import source "hi-scores.asm"
+.import source "attract.asm"
 .import source "entername.asm"
 .import source "gameover.asm"
-.import source "attract.asm"
 .import source "levelselect.asm"
 .import source "controlled_input.asm"
+.import source "file_load.asm"
+.import source "file_save.asm"
 
 
 START:
@@ -67,7 +69,7 @@ START:
     jsr RESET_HISCORE_TABLE
 
     // load the hiscores
-    // ..
+    jsr LOAD_FILE
 
     // setup interrupt to play the sound
     lda #SND_MUSIC_TITLE
@@ -94,7 +96,6 @@ loopstart:
 }
 
 	jsr GetInput
-
 	jsr COLOR_CHANGES
 
 !checkMode:
@@ -153,7 +154,7 @@ COLOR_CHANGES:
 
 	dec charColor
 	bpl !skip+
-	lda #16
+	lda #15
 	sta charColor
 !skip:
 	jsr SET_CHAR_COLOR

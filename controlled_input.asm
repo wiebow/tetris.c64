@@ -40,7 +40,6 @@ delete:
 
 	lda #0
 	rts
-	// jmp input
 
 // a valid character was entered
 // add it to the buffer if space left.

@@ -127,7 +127,7 @@ found_hiscore:
 // into the cleared position and clear the name.
 INSERT_HISCORE_ENTRY:
 	// first we need to move the data down.
-	// point y offset to end of table.
+	// point memory offset to end of table.
 	ldy #hiscore_table_end - hiscore_table_start
 
 !loop:
@@ -149,7 +149,6 @@ clear_entry:
 	cpx #ENTRY_LENGTH
 	bne !loop-
 !exit:
-
 	rts
 
 // ------------------------------------------
