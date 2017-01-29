@@ -345,6 +345,8 @@ BlockRight:
 	jsr PrintBlock
 	rts
 
+
+//player forces block down
 BlockDown:
 	jsr EraseBlock
 	inc blockYposition
@@ -361,11 +363,7 @@ BlockDown:
 !skip:
 	jsr PrintBlock
 
-	lda #1 		 			// have a smaller falldelay
-	sta fallDelayTimer 		// as we move down ourselves
-
-		// moving the block down gives points
-
+	// moving the block down gives points
 	lda #1
 	sta addition+2
 	lda #0

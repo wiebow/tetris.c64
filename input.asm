@@ -1,7 +1,7 @@
 
 
 .const keyPressed = $cb 	// scnkey puts code of held key here.
-.const INPUTDELAY = 15	 	// update delay between input checks
+.const INPUTDELAY = 10	 	// update delay between input checks. in frames
 
 
 // keycodes to check for in inputResult values
@@ -25,7 +25,7 @@
 // it will leave the detected input in inputResult
 GetInput:
 	jsr GetKeyInput
-//	lda inputResult
+	lda inputResult
 	cmp #NOINPUT
 	bne !skip+
 	jsr GetJoyInput
@@ -40,27 +40,40 @@ GetInput:
 // and accumulator as well
 
 GetKeyInput:
-	lda #NOINPUT 			// first assume there is no input
-	sta inputResult
-
 	lda keyPressed 			// get held key code
 	cmp previousKey 		// is it a different key than before?
-	bne !skip+	 			// if yes, then skip the current input delay
-							// because we want snappy controls
-doDelay:
-	dec inputDelayCounter 	// count down
-	beq !skip+ 				// continue if delay passed
-	rts 					// delay ongoing. exit. no input.
-!skip:
-	sta previousKey 		// save key code for next update
-	cmp #NOKEY 				// is it the no key held code?
-	bne !skip+ 				// no
-	lda #NOINPUT 			// yes. select that input result
-!skip:
-	sta inputResult 		// store input result
+	bne !skip+ 				// yes. dont use key delay
 
-	ldx #INPUTDELAY 		// restore key delay counter
-	stx inputDelayCounter
+	// key is the same. update delay counter
+	dec keyDelayCounter
+	beq !skip+
+	lda #NOINPUT
+	sta inputResult
+	rts
+!skip:
+	// restore key delay counter
+	ldx #INPUTDELAY
+	stx keyDelayCounter
+	// save key code for next update
+	sta previousKey
+
+	cmp #NOKEY
+	bne !skip+
+	lda #NOINPUT 			// yes
+	sta inputResult
+	rts
+
+!skip:
+	cmp #DOWN
+	bne !skip+
+
+	// if we press down, the delay is shorter
+	ldx #4 // INPUTDELAY / 2
+	stx keyDelayCounter
+
+!skip:
+	sta inputResult 	// store input result
+
 	rts
 
 // -------------------------------------------------
@@ -74,21 +87,24 @@ doDelay:
 .const NOJOY  = $ff 				// value for no joy input
 
 GetJoyInput:
-	lda #NOINPUT 			// assume there is no input
-	sta inputResult
-
 	lda CIAPRA 				// load the input byte
 	cmp previousJoy 		// same as previous input?
 	bne !skip+ 				// no, so skip delay
-joyDelay:
-	dec inputDelayCounter	// update delay
-	beq !skip+ 				// continue if delay complete
+
+	// key is the same. update delay counter
+	dec joyDelayCounter
+	beq !skip+
+	lda #NOINPUT
+	sta inputResult
 	rts
+
 !skip:
 	ldx #INPUTDELAY 		// reset the delay counter
-	stx inputDelayCounter
+	stx joyDelayCounter
 
 	sta previousJoy 		// save this input value
+
+
 	cmp #NOJOY 				// same as noinput?
 	bne !nextjoy+ 			// no, so go check the possiblities
 
@@ -108,6 +124,8 @@ joyDelay:
 	bcs !nextjoy+ 			// bit set means not pressed
 	lda #DOWN
 	sta inputResult
+	ldx #4					// force shorter delay
+	stx joyDelayCounter
 	rts
 !nextjoy:
 	lsr 					// check bit 2: joy left
@@ -134,16 +152,17 @@ joyDelay:
 // ------------------------------------------------
 
 // this byte holds the result of the input query
-// game modes can check this byte and get the
-// registered input after calling GetInput
 inputResult:
 	.byte 0
 
-inputDelayCounter:
-	.byte INPUTDELAY		// if this reaches 0, the player input is read
+keyDelayCounter:
+	.byte INPUTDELAY
 
 previousKey:
 	.byte NOINPUT			// previous key held
+
+joyDelayCounter:
+	.byte INPUTDELAY
 
 previousJoy:
 	.byte 255 				// previous joy direction held
