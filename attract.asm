@@ -19,7 +19,6 @@ UpdateAttractMode:
 	beq triggered 			// swap screen when triggered
 
 	// check for key or joy button press
-//	jsr GetInput
 
 	lda inputResult
 	cmp #DOWN 				// enter pressed?
@@ -36,13 +35,25 @@ triggered:
 
 	inc attractStep 		// go to next screen
 	lda attractStep
-	cmp #3 					// have we done 3 screens?
+	cmp #4 					// have we done 3 screens?
 	bne !skip+				// no. continue cycle
 	lda #SCREEN_TITLE 		// yes. reset cycle
 	sta attractStep
 !skip:
 	ldy attractStep
-	jmp PRINT_SCREEN
+	jsr PRINT_SCREEN
+
+	lda attractStep
+	cmp #3
+	bne !exit+
+
+	ldx #14
+	ldy #14
+	jsr PRINT_HISCORE_TABLE
+!exit:
+	rts
+
+
 
 // -----------------------------------------
 
