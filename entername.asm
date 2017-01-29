@@ -57,7 +57,6 @@ UpdateEnterNameMode:
 	bne waitForInput
 
 	// wait for a button or key
-//	jsr GetInput
 	lda inputResult
 	cmp #DOWN
 	beq !exit+
@@ -85,6 +84,10 @@ waitForInput:
 	inx
 	cpx #TABLE_NAMELENGTH
 	bne !loop-
+
+	// save to disk
+	jsr SAVE_FILE
+
 	jmp EndEnterNameMode
 !exit:
 	rts
